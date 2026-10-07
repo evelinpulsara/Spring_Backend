@@ -32,3 +32,38 @@ COMMENT ON COLUMN usuarios.contrasena_hash IS 'Hash bcrypt generado por Spring S
 CREATE TABLE preferencias_usuario (
     id                          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     usuario_id                  UUID        NOT NULL UNIQUE,
+    duracion_ciclo_esperada     SMALLINT    DEFAULT 28 CHECK (duracion_ciclo_esperada BETWEEN 15 AND 60),
+    duracion_periodo_esperada   SMALLINT    DEFAULT 5  CHECK (duracion_periodo_esperada BETWEEN 1 AND 15),
+    notificaciones_activas      BOOLEAN     DEFAULT TRUE,
+    perfil_publico              BOOLEAN     NOT NULL DEFAULT FALSE,
+    idioma                      VARCHAR(10) NOT NULL DEFAULT 'es',
+    tema_interfaz               VARCHAR(20) DEFAULT 'dark' CHECK (tema_interfaz IN ('light','dark','system')),
+    primera_vez_app             BOOLEAN     DEFAULT TRUE,
+    fecha_actualizacion         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT fk_pref_usuario FOREIGN KEY (usuario_id)
+        REFERENCES usuarios(id) ON DELETE CASCADE
+);
+
+-- =============================================================================
+-- TABLA: roles (para Spring Security)
+-- =============================================================================
+CREATE TABLE roles (
+    id      SMALLSERIAL PRIMARY KEY,
+    nombre  VARCHAR(50) NOT NULL UNIQUE
+);
+
+-- =============================================================================
+-- TABLA: usuario_roles (N:M)
+-- =============================================================================
+CREATE TABLE usuario_roles (
+    usuario_id  UUID        NOT NULL,
+    rol_id      SMALLINT    NOT NULL,
+    PRIMARY KEY (usuario_id, rol_id),
+    CONSTRAINT fk_ur_usuario FOREIGN KEY (usuario_id)
+        REFERENCES usuarios(id) ON DELETE CASCADE,
+    CONSTRAINT fk_ur_rol FOREIGN KEY (rol_id)
+        REFERENCES roles(id) ON DELETE RESTRICT
+);
+
+-- =============================================================================
+-- TABLA: ciclos_menstruales
