@@ -67,3 +67,37 @@ CREATE TABLE usuario_roles (
 
 -- =============================================================================
 -- TABLA: ciclos_menstruales
+-- =============================================================================
+CREATE TABLE ciclos_menstruales (
+    id                  UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    usuario_id          UUID        NOT NULL,
+    fecha_inicio        DATE        NOT NULL,
+    fecha_fin_periodo   DATE,
+    fecha_fin_ciclo     DATE,
+    duracion_periodo    SMALLINT    CHECK (duracion_periodo BETWEEN 1 AND 20),
+    duracion_ciclo      SMALLINT    CHECK (duracion_ciclo BETWEEN 15 AND 90),
+    regularidad         VARCHAR(20) DEFAULT 'desconocida'
+                            CHECK (regularidad IN ('regular','irregular','desconocida')),
+    notas               TEXT,
+    fecha_creacion      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    fecha_actualizacion TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT fk_ciclo_usuario FOREIGN KEY (usuario_id)
+        REFERENCES usuarios(id) ON DELETE CASCADE,
+    CONSTRAINT chk_fechas_periodo CHECK (
+        fecha_fin_periodo IS NULL OR fecha_fin_periodo >= fecha_inicio
+    ),
+    CONSTRAINT chk_fechas_ciclo CHECK (
+        fecha_fin_ciclo IS NULL OR fecha_fin_ciclo > fecha_inicio
+    ),
+    CONSTRAINT uq_ciclo_inicio UNIQUE (usuario_id, fecha_inicio)
+);
+
+COMMENT ON TABLE ciclos_menstruales IS 'Historial de ciclos. Un registro por ciclo completo.';
+
+-- =============================================================================
+-- TABLA: tipos_sintoma (catálogo)
+-- =============================================================================
+CREATE TABLE tipos_sintoma (
+    id          SMALLSERIAL  PRIMARY KEY,
+    categoria   VARCHAR(50)  NOT NULL,
+    nombre      VARCHAR(100) NOT NULL UNIQUE,
