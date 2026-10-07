@@ -101,3 +101,38 @@ CREATE TABLE tipos_sintoma (
     id          SMALLSERIAL  PRIMARY KEY,
     categoria   VARCHAR(50)  NOT NULL,
     nombre      VARCHAR(100) NOT NULL UNIQUE,
+    descripcion TEXT,
+    icono       VARCHAR(50)
+);
+
+-- =============================================================================
+-- TABLA: registros_diarios
+-- =============================================================================
+CREATE TABLE registros_diarios (
+    id                  UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    usuario_id          UUID         NOT NULL,
+    ciclo_id            UUID,
+    fecha               DATE         NOT NULL,
+    nivel_energia       SMALLINT     CHECK (nivel_energia BETWEEN 1 AND 10),
+    nivel_estres        SMALLINT     CHECK (nivel_estres  BETWEEN 1 AND 10),
+    calidad_sueno       SMALLINT     CHECK (calidad_sueno BETWEEN 1 AND 10),
+    horas_sueno         NUMERIC(4,1) CHECK (horas_sueno  BETWEEN 0 AND 24),
+    hay_sangrado        BOOLEAN      DEFAULT FALSE,
+    intensidad_sangrado VARCHAR(20)  CHECK (intensidad_sangrado IN ('leve','moderado','abundante','muy_abundante')),
+    estado_animo_valor  SMALLINT     CHECK (estado_animo_valor BETWEEN 1 AND 10),
+    estado_animo_etiq   VARCHAR(50),
+    notas               TEXT,
+    fecha_creacion      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    fecha_actualizacion TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    CONSTRAINT fk_rd_usuario FOREIGN KEY (usuario_id)
+        REFERENCES usuarios(id) ON DELETE CASCADE,
+    CONSTRAINT fk_rd_ciclo FOREIGN KEY (ciclo_id)
+        REFERENCES ciclos_menstruales(id) ON DELETE SET NULL,
+    CONSTRAINT uq_registro_diario UNIQUE (usuario_id, fecha)
+);
+
+COMMENT ON TABLE registros_diarios IS 'Un registro de bienestar por usuaria por día.';
+
+-- =============================================================================
+-- TABLA: sintomas_registro
+-- =============================================================================
