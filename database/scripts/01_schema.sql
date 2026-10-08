@@ -205,3 +205,26 @@ CREATE INDEX idx_tokens_jti              ON tokens_revocados(jti);
 CREATE INDEX idx_tokens_expira           ON tokens_revocados(fecha_expira);
 
 -- =============================================================================
+-- TRIGGER: actualizar fecha_actualizacion automáticamente
+-- =============================================================================
+CREATE OR REPLACE FUNCTION fn_actualizar_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.fecha_actualizacion = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_ciclos_ts
+    BEFORE UPDATE ON ciclos_menstruales
+    FOR EACH ROW EXECUTE FUNCTION fn_actualizar_timestamp();
+
+CREATE TRIGGER trg_registros_ts
+    BEFORE UPDATE ON registros_diarios
+    FOR EACH ROW EXECUTE FUNCTION fn_actualizar_timestamp();
+
+CREATE TRIGGER trg_preferencias_ts
+    BEFORE UPDATE ON preferencias_usuario
+    FOR EACH ROW EXECUTE FUNCTION fn_actualizar_timestamp();
+
+-- FIN SCRIPT 01
