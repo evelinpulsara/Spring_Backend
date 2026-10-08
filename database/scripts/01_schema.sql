@@ -136,3 +136,37 @@ COMMENT ON TABLE registros_diarios IS 'Un registro de bienestar por usuaria por 
 -- =============================================================================
 -- TABLA: sintomas_registro
 -- =============================================================================
+CREATE TABLE sintomas_registro (
+    id              UUID     PRIMARY KEY DEFAULT gen_random_uuid(),
+    registro_id     UUID     NOT NULL,
+    tipo_sintoma_id SMALLINT NOT NULL,
+    intensidad      SMALLINT NOT NULL CHECK (intensidad BETWEEN 1 AND 5),
+    momento_dia     VARCHAR(20) CHECK (momento_dia IN ('manana','tarde','noche','todo_el_dia')),
+    CONSTRAINT fk_sr_registro  FOREIGN KEY (registro_id)
+        REFERENCES registros_diarios(id) ON DELETE CASCADE,
+    CONSTRAINT fk_sr_tipo      FOREIGN KEY (tipo_sintoma_id)
+        REFERENCES tipos_sintoma(id) ON DELETE RESTRICT,
+    CONSTRAINT uq_sintoma_dia  UNIQUE (registro_id, tipo_sintoma_id, momento_dia)
+);
+
+COMMENT ON COLUMN sintomas_registro.intensidad IS '1=muy leve, 2=leve, 3=moderado, 4=intenso, 5=muy intenso.';
+
+-- =============================================================================
+-- TABLA: predicciones_ciclo
+-- =============================================================================
+CREATE TABLE predicciones_ciclo (
+    id                          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    usuario_id                  UUID        NOT NULL,
+    fecha_generacion            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    fecha_inicio_estimada       DATE        NOT NULL,
+    fecha_inicio_rango_min      DATE        NOT NULL,
+    fecha_inicio_rango_max      DATE        NOT NULL,
+    fecha_ovulacion_estimada    DATE,
+    ciclos_analizados           SMALLINT    NOT NULL DEFAULT 0,
+    confianza_pct               SMALLINT    CHECK (confianza_pct BETWEEN 0 AND 100),
+    algoritmo_version           VARCHAR(20) DEFAULT 'v1.0',
+    aviso_legal                 TEXT        NOT NULL DEFAULT
+        'ESTIMACIÓN ORIENTATIVA basada en historial. NO es diagnóstico médico. Consulta a un profesional de salud.',
+    CONSTRAINT fk_pred_usuario FOREIGN KEY (usuario_id)
+        REFERENCES usuarios(id) ON DELETE CASCADE,
+    CONSTRAINT chk_rango CHECK (
