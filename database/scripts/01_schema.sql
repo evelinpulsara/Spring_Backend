@@ -170,3 +170,38 @@ CREATE TABLE predicciones_ciclo (
     CONSTRAINT fk_pred_usuario FOREIGN KEY (usuario_id)
         REFERENCES usuarios(id) ON DELETE CASCADE,
     CONSTRAINT chk_rango CHECK (
+        fecha_inicio_rango_min <= fecha_inicio_estimada
+        AND fecha_inicio_estimada <= fecha_inicio_rango_max
+    )
+);
+
+COMMENT ON TABLE predicciones_ciclo IS 'Estimaciones orientativas. NO diagnósticos médicos.';
+
+-- =============================================================================
+-- TABLA: tokens_revocados (JWT blacklist)
+-- =============================================================================
+CREATE TABLE tokens_revocados (
+    id              UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    jti             VARCHAR(255) NOT NULL UNIQUE,
+    usuario_id      UUID         NOT NULL,
+    fecha_expira    TIMESTAMPTZ  NOT NULL,
+    fecha_revocado  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    razon           VARCHAR(50)  DEFAULT 'logout'
+                        CHECK (razon IN ('logout','cambio_contrasena','admin')),
+    CONSTRAINT fk_tr_usuario FOREIGN KEY (usuario_id)
+        REFERENCES usuarios(id) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE tokens_revocados IS 'Blacklist de JWT. Invalida tokens antes de expirar.';
+
+-- =============================================================================
+-- ÍNDICES
+-- =============================================================================
+CREATE INDEX idx_ciclos_usuario_fecha    ON ciclos_menstruales(usuario_id, fecha_inicio DESC);
+CREATE INDEX idx_registros_usuario_fecha ON registros_diarios(usuario_id, fecha DESC);
+CREATE INDEX idx_sintomas_registro       ON sintomas_registro(registro_id);
+CREATE INDEX idx_predicciones_usuario    ON predicciones_ciclo(usuario_id, fecha_generacion DESC);
+CREATE INDEX idx_tokens_jti              ON tokens_revocados(jti);
+CREATE INDEX idx_tokens_expira           ON tokens_revocados(fecha_expira);
+
+-- =============================================================================
