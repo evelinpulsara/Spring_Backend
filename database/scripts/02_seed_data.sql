@@ -61,3 +61,34 @@ VALUES
      '2024-09-03', '2024-09-08', '2024-10-01', 5, 28, 'regular'),
     ('c1000001-0000-0000-0000-000000000003',
      'a1b2c3d4-0000-0000-0000-000000000001',
+     '2024-10-02', '2024-10-07', NULL,           5, NULL, 'regular');
+
+-- Registros diarios de Ana (primera semana del ciclo actual)
+INSERT INTO registros_diarios
+    (usuario_id, ciclo_id, fecha, nivel_energia, nivel_estres, calidad_sueno,
+     horas_sueno, hay_sangrado, intensidad_sangrado, estado_animo_valor, estado_animo_etiq, notas)
+VALUES
+    ('a1b2c3d4-0000-0000-0000-000000000001',
+     'c1000001-0000-0000-0000-000000000003',
+     '2024-10-02', 4, 7, 5, 6.0, TRUE,  'moderado',  4, 'irritable',
+     'Primer día del ciclo, calambres moderados en la mañana.'),
+    ('a1b2c3d4-0000-0000-0000-000000000001',
+     'c1000001-0000-0000-0000-000000000003',
+     '2024-10-03', 5, 6, 6, 7.0, TRUE,  'abundante', 5, 'triste',
+     'Flujo más intenso hoy.'),
+    ('a1b2c3d4-0000-0000-0000-000000000001',
+     'c1000001-0000-0000-0000-000000000003',
+     '2024-10-04', 5, 5, 7, 7.5, TRUE,  'moderado',  6, 'cansada',
+     NULL),
+    ('a1b2c3d4-0000-0000-0000-000000000001',
+     'c1000001-0000-0000-0000-000000000003',
+     '2024-10-05', 6, 4, 7, 8.0, TRUE,  'leve',      7, 'tranquila',
+     NULL),
+    ('a1b2c3d4-0000-0000-0000-000000000001',
+     'c1000001-0000-0000-0000-000000000003',
+     '2024-10-06', 7, 3, 8, 8.0, TRUE,  'leve',      7, 'tranquila',
+     'Mejorando poco a poco.'),
+    ('a1b2c3d4-0000-0000-0000-000000000001',
+     'c1000001-0000-0000-0000-000000000003',
+     '2024-10-07', 8, 2, 9, 8.5, FALSE, NULL,        8, 'feliz',
+     'Fin del sangrado. Mucho mejor.'),
