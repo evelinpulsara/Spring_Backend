@@ -92,3 +92,35 @@ VALUES
      'c1000001-0000-0000-0000-000000000003',
      '2024-10-07', 8, 2, 9, 8.5, FALSE, NULL,        8, 'feliz',
      'Fin del sangrado. Mucho mejor.'),
+    ('a1b2c3d4-0000-0000-0000-000000000001',
+     'c1000001-0000-0000-0000-000000000003',
+     '2024-10-08', 9, 2, 9, 8.0, FALSE, NULL,        9, 'motivada',
+     NULL);
+
+-- Síntomas de Ana (día 02/10)
+WITH rd AS (
+    SELECT id FROM registros_diarios
+    WHERE usuario_id = 'a1b2c3d4-0000-0000-0000-000000000001'
+      AND fecha = '2024-10-02'
+)
+INSERT INTO sintomas_registro (registro_id, tipo_sintoma_id, intensidad, momento_dia)
+SELECT rd.id, ts.id, 4, 'manana'
+FROM rd, tipos_sintoma ts WHERE ts.nombre = 'Calambres'
+UNION ALL
+SELECT rd.id, ts.id, 3, 'todo_el_dia'
+FROM rd, tipos_sintoma ts WHERE ts.nombre = 'Irritabilidad'
+UNION ALL
+SELECT rd.id, ts.id, 2, 'tarde'
+FROM rd, tipos_sintoma ts WHERE ts.nombre = 'Dolor de cabeza';
+
+-- Predicción del próximo ciclo de Ana
+INSERT INTO predicciones_ciclo
+    (usuario_id, fecha_inicio_estimada, fecha_inicio_rango_min,
+     fecha_inicio_rango_max, fecha_ovulacion_estimada, ciclos_analizados, confianza_pct)
+VALUES (
+    'a1b2c3d4-0000-0000-0000-000000000001',
+    '2024-10-30',
+    '2024-10-27',
+    '2024-11-02',
+    '2024-10-16',
+    3,
