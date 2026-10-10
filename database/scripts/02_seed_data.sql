@@ -124,3 +124,35 @@ VALUES (
     '2024-11-02',
     '2024-10-16',
     3,
+    78
+);
+
+-- ============================================================
+-- Usuario ficticio 2: María Rodríguez (ciclos irregulares)
+-- ============================================================
+INSERT INTO usuarios (id, nombre, correo, contrasena_hash, zona_horaria)
+VALUES (
+    'a1b2c3d4-0000-0000-0000-000000000002',
+    'María Rodríguez',
+    'maria.rodriguez@ejemplo.com',
+    '$2a$12$ABCDEFGHIJKLMNOPQRSTUabcdefghijklmnopqrstu123456789012',
+    'America/Bogota'
+);
+
+INSERT INTO preferencias_usuario (usuario_id, duracion_ciclo_esperada, duracion_periodo_esperada, idioma)
+VALUES ('a1b2c3d4-0000-0000-0000-000000000002', 35, 7, 'es');
+
+INSERT INTO usuario_roles (usuario_id, rol_id) VALUES
+    ('a1b2c3d4-0000-0000-0000-000000000002', 1);
+
+INSERT INTO ciclos_menstruales
+    (usuario_id, fecha_inicio, fecha_fin_periodo, fecha_fin_ciclo, duracion_periodo, duracion_ciclo, regularidad)
+VALUES
+    ('a1b2c3d4-0000-0000-0000-000000000002',
+     '2024-07-10', '2024-07-17', '2024-08-19', 7, 40, 'irregular'),
+    ('a1b2c3d4-0000-0000-0000-000000000002',
+     '2024-08-20', '2024-08-26', '2024-09-25', 6, 36, 'irregular'),
+    ('a1b2c3d4-0000-0000-0000-000000000002',
+     '2024-09-26', '2024-10-03', NULL,          7, NULL, 'irregular');
+
+-- FIN SCRIPT 02
