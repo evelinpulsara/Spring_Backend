@@ -19,3 +19,24 @@ CREATE TABLE usuarios (
     cuestionario_completo  BOOLEAN       NOT NULL DEFAULT FALSE,
     notif_periodo          BOOLEAN       NOT NULL DEFAULT TRUE,
     notif_ventana_fertil   BOOLEAN       NOT NULL DEFAULT FALSE,
+    notif_registro_diario  BOOLEAN       NOT NULL DEFAULT TRUE,
+    fecha_registro         TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Días de menstruación registrados (uno por día).
+CREATE TABLE dias_periodo (
+    id          UUID         PRIMARY KEY,
+    usuario_id  UUID         NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    fecha       DATE         NOT NULL,
+    flujo       VARCHAR(10)  NOT NULL DEFAULT 'medium'
+                CHECK (flujo IN ('none', 'light', 'medium', 'heavy')),
+    CONSTRAINT uq_dia_periodo UNIQUE (usuario_id, fecha)
+);
+
+-- Síntomas por día con intensidad de 1 a 5.
+CREATE TABLE sintomas (
+    id          UUID         PRIMARY KEY,
+    usuario_id  UUID         NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    fecha       DATE         NOT NULL,
+    tipo        VARCHAR(20)  NOT NULL
+                CHECK (tipo IN ('cramps', 'headache', 'mood', 'bloating',
