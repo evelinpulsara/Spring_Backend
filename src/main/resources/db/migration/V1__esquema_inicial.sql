@@ -40,3 +40,21 @@ CREATE TABLE sintomas (
     fecha       DATE         NOT NULL,
     tipo        VARCHAR(20)  NOT NULL
                 CHECK (tipo IN ('cramps', 'headache', 'mood', 'bloating',
+                                'acne', 'fatigue', 'appetite', 'sleep')),
+    intensidad  SMALLINT     NOT NULL CHECK (intensidad BETWEEN 1 AND 5),
+    CONSTRAINT uq_sintoma_dia UNIQUE (usuario_id, fecha, tipo)
+);
+
+-- Relaciones sexuales registradas (privado) y el tipo de protección.
+CREATE TABLE relaciones (
+    id          UUID         PRIMARY KEY,
+    usuario_id  UUID         NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    fecha       DATE         NOT NULL,
+    proteccion  VARCHAR(15)  NOT NULL
+                CHECK (proteccion IN ('none', 'condom', 'contraceptive', 'unsure')),
+    CONSTRAINT uq_relacion_dia UNIQUE (usuario_id, fecha)
+);
+
+CREATE INDEX idx_dias_periodo_usuario ON dias_periodo (usuario_id, fecha);
+CREATE INDEX idx_sintomas_usuario     ON sintomas (usuario_id, fecha);
+CREATE INDEX idx_relaciones_usuario   ON relaciones (usuario_id, fecha);
