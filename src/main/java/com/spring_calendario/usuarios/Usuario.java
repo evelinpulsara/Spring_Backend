@@ -27,3 +27,20 @@ public class Usuario {
     @Column(name = "grupo_edad", nullable = false, length = 10)
     private String grupoEdad = "unknown";
 
+    @Column(nullable = false, length = 10)
+    private String regularidad = "unsure";
+
+    @Column(name = "duracion_ciclo", nullable = false)
+    private short duracionCiclo = 28;
+
+    @Column(name = "duracion_periodo", nullable = false)
+    private short duracionPeriodo = 5;
+
+    @Column(name = "cuestionario_completo", nullable = false)
+    private boolean cuestionarioCompleto;
+
+    @Column(name = "notif_periodo", nullable = false)
+    private boolean notifPeriodo = true;
+
+    @Column(name = "notif_ventana_fertil", nullable = false)
+    private boolean notifVentanaFertil;
