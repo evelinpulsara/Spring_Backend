@@ -57,3 +57,16 @@ public class Usuario {
         this.id = UUID.randomUUID();
         this.nombre = nombre;
         this.correo = correo;
+        this.contrasenaHash = contrasenaHash;
+    }
+
+    public UUID getId() { return id; }
+    public String getNombre() { return nombre; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
+    public String getCorreo() { return correo; }
+    public String getContrasenaHash() { return contrasenaHash; }
+    public String getGrupoEdad() { return grupoEdad; }
+    public void setGrupoEdad(String grupoEdad) { this.grupoEdad = grupoEdad; }
+    public String getRegularidad() { return regularidad; }
+    public void setRegularidad(String regularidad) { this.regularidad = regularidad; }
+    public int getDuracionCiclo() { return duracionCiclo; }
