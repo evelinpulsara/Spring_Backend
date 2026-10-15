@@ -15,3 +15,15 @@ public class Usuario {
     @Id
     private UUID id;
 
+    @Column(nullable = false, length = 100)
+    private String nombre;
+
+    @Column(nullable = false, unique = true)
+    private String correo;
+
+    @Column(name = "contrasena_hash", nullable = false, length = 100)
+    private String contrasenaHash;
+
+    @Column(name = "grupo_edad", nullable = false, length = 10)
+    private String grupoEdad = "unknown";
+
