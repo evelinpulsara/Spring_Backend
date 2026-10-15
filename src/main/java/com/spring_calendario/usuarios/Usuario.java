@@ -44,3 +44,16 @@ public class Usuario {
 
     @Column(name = "notif_ventana_fertil", nullable = false)
     private boolean notifVentanaFertil;
+
+    @Column(name = "notif_registro_diario", nullable = false)
+    private boolean notifRegistroDiario = true;
+
+    @Column(name = "fecha_registro", nullable = false)
+    private OffsetDateTime fechaRegistro = OffsetDateTime.now();
+
+    protected Usuario() {}
+
+    public Usuario(String nombre, String correo, String contrasenaHash) {
+        this.id = UUID.randomUUID();
+        this.nombre = nombre;
+        this.correo = correo;
