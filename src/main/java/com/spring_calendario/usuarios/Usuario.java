@@ -70,3 +70,16 @@ public class Usuario {
     public String getRegularidad() { return regularidad; }
     public void setRegularidad(String regularidad) { this.regularidad = regularidad; }
     public int getDuracionCiclo() { return duracionCiclo; }
+    public void setDuracionCiclo(int dias) { this.duracionCiclo = (short) dias; }
+    public int getDuracionPeriodo() { return duracionPeriodo; }
+    public void setDuracionPeriodo(int dias) { this.duracionPeriodo = (short) dias; }
+    public boolean isCuestionarioCompleto() { return cuestionarioCompleto; }
+    public void setCuestionarioCompleto(boolean completo) { this.cuestionarioCompleto = completo; }
+    public boolean isNotifPeriodo() { return notifPeriodo; }
+    public void setNotifPeriodo(boolean v) { this.notifPeriodo = v; }
+    public boolean isNotifVentanaFertil() { return notifVentanaFertil; }
+    public void setNotifVentanaFertil(boolean v) { this.notifVentanaFertil = v; }
+    public boolean isNotifRegistroDiario() { return notifRegistroDiario; }
+    public void setNotifRegistroDiario(boolean v) { this.notifRegistroDiario = v; }
+    public OffsetDateTime getFechaRegistro() { return fechaRegistro; }
+}
