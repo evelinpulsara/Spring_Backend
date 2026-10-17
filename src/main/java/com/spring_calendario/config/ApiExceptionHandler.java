@@ -16,3 +16,22 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 /** Convierte los errores en respuestas JSON claras, sin detalles internos. */
 @RestControllerAdvice
 public class ApiExceptionHandler {
+
+    @ExceptionHandler(AiUnavailableException.class)
+    public ResponseEntity<Map<String, String>> aiUnavailable(AiUnavailableException e) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(Map.of("error", e.getMessage()));
+    }
+
+    @ExceptionHandler(ApiException.class)
+    public ResponseEntity<Map<String, String>> api(ApiException e) {
+        return ResponseEntity.status(e.status()).body(Map.of("error", e.code()));
+    }
+
+    @ExceptionHandler({MethodArgumentNotValidException.class, HttpMessageNotReadableException.class,
+            HandlerMethodValidationException.class, ConstraintViolationException.class,
+            MethodArgumentTypeMismatchException.class})
+    public ResponseEntity<Map<String, String>> badRequest(Exception e) {
+        return ResponseEntity.badRequest().body(Map.of("error", "Datos de la solicitud no válidos."));
+    }
+}
