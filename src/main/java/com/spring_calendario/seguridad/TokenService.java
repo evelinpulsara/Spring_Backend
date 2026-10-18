@@ -19,3 +19,25 @@ public class TokenService {
     private final JwtEncoder encoder;
     private final Duration duration;
 
+    public TokenService(JwtEncoder encoder, @Value("${app.jwt.duration}") Duration duration) {
+        this.encoder = encoder;
+        this.duration = duration;
+    }
+
+    public String createToken(UUID userId) {
+        Instant now = Instant.now();
+        JwtClaimsSet claims = JwtClaimsSet.builder()
+                .issuer("spring-calendario")
+                .issuedAt(now)
+                .expiresAt(now.plus(duration))
+                .subject(userId.toString())
+                .build();
+        JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
+        return encoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
+    }
+
+    /** Id de la usuaria dueña del token de la petición actual. */
+    public static UUID userId(Authentication authentication) {
+        return UUID.fromString(authentication.getName());
+    }
+}
