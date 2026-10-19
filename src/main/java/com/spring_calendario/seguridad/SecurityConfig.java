@@ -71,3 +71,17 @@ public class SecurityConfig {
     JwtDecoder jwtDecoder(SecretKey jwtKey) {
         return NimbusJwtDecoder.withSecretKey(jwtKey).macAlgorithm(MacAlgorithm.HS256).build();
     }
+
+    /** Páginas (orígenes) que pueden usar la API desde el navegador. */
+    @Bean
+    CorsConfigurationSource corsConfigurationSource(
+            @Value("${app.cors.allowed-origin-patterns}") String[] patterns) {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOriginPatterns(Arrays.stream(patterns).map(String::trim).toList());
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("Content-Type", "Authorization"));
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/**", config);
+        return source;
+    }
+}
