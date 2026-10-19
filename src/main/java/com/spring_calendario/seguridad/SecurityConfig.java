@@ -54,3 +54,20 @@ public class SecurityConfig {
     }
 
     @Bean
+    SecretKey jwtKey(@Value("${app.jwt.secret}") String secret) {
+        byte[] bytes = secret.getBytes(StandardCharsets.UTF_8);
+        if (bytes.length < 32) {
+            throw new IllegalStateException("JWT_SECRET debe tener al menos 32 caracteres.");
+        }
+        return new SecretKeySpec(bytes, "HmacSHA256");
+    }
+
+    @Bean
+    JwtEncoder jwtEncoder(SecretKey jwtKey) {
+        return new NimbusJwtEncoder(new ImmutableSecret<>(jwtKey));
+    }
+
+    @Bean
+    JwtDecoder jwtDecoder(SecretKey jwtKey) {
+        return NimbusJwtDecoder.withSecretKey(jwtKey).macAlgorithm(MacAlgorithm.HS256).build();
+    }
