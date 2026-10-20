@@ -20,3 +20,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final UsuarioRepository usuarios;
+    private final PasswordEncoder passwordEncoder;
+    private final TokenService tokens;
+
+    public AuthController(UsuarioRepository usuarios, PasswordEncoder passwordEncoder, TokenService tokens) {
+        this.usuarios = usuarios;
+        this.passwordEncoder = passwordEncoder;
+        this.tokens = tokens;
+    }
+
+    @PostMapping("/register")
+    @ResponseStatus(HttpStatus.CREATED)
