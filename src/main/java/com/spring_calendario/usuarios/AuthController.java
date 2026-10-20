@@ -31,3 +31,14 @@ public class AuthController {
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
+    public AuthResponse register(@Valid @RequestBody AuthRequests.Register request) {
+        String email = normalize(request.email());
+        if (usuarios.existsByCorreo(email)) {
+            throw new ApiException(HttpStatus.CONFLICT, "email_taken");
+        }
+        Usuario usuario = usuarios.save(new Usuario(
+                request.name().trim(), email, passwordEncoder.encode(request.password())));
+        return new AuthResponse(tokens.createToken(usuario.getId()), UserDto.from(usuario));
+    }
+
+    @PostMapping("/login")
