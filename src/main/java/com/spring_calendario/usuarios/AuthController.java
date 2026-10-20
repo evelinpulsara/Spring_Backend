@@ -9,3 +9,14 @@ import java.util.Locale;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+/** Registro e inicio de sesión: POST /api/auth/register y /api/auth/login */
+@RestController
+@RequestMapping("/api/auth")
+public class AuthController {
+
+    private final UsuarioRepository usuarios;
