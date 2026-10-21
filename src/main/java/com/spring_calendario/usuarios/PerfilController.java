@@ -28,3 +28,18 @@ public class PerfilController {
     private final DiaPeriodoRepository diasPeriodo;
     private final SintomaRepository sintomas;
     private final RelacionRepository relaciones;
+
+    public PerfilController(UsuarioRepository usuarios, DiaPeriodoRepository diasPeriodo,
+            SintomaRepository sintomas, RelacionRepository relaciones) {
+        this.usuarios = usuarios;
+        this.diasPeriodo = diasPeriodo;
+        this.sintomas = sintomas;
+        this.relaciones = relaciones;
+    }
+
+    @GetMapping
+    public UserDto me(Authentication auth) {
+        return UserDto.from(current(auth));
+    }
+
+    @PutMapping
