@@ -43,3 +43,18 @@ public class PerfilController {
     }
 
     @PutMapping
+    @Transactional
+    public UserDto update(Authentication auth, @Valid @RequestBody AuthRequests.UpdateProfile r) {
+        Usuario u = current(auth);
+        u.setNombre(r.name().trim());
+        u.setDuracionCiclo(r.averageCycleLength());
+        u.setDuracionPeriodo(r.averagePeriodDuration());
+        u.setGrupoEdad(r.ageGroup());
+        u.setRegularidad(r.regularity());
+        u.setCuestionarioCompleto(r.cycleSetupCompleted());
+        u.setNotifPeriodo(r.notifications().periodReminders());
+        u.setNotifVentanaFertil(r.notifications().fertileWindowAlerts());
+        u.setNotifRegistroDiario(r.notifications().dailyLogReminder());
+        return UserDto.from(usuarios.save(u));
+    }
+
