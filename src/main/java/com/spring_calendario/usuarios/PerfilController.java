@@ -58,3 +58,19 @@ public class PerfilController {
         return UserDto.from(usuarios.save(u));
     }
 
+    /** Borra todos los registros (periodo, síntomas, relaciones), no la cuenta. */
+    @DeleteMapping("/data")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Transactional
+    public void deleteData(Authentication auth) {
+        UUID id = current(auth).getId();
+        diasPeriodo.deleteByUsuarioId(id);
+        sintomas.deleteByUsuarioId(id);
+        relaciones.deleteByUsuarioId(id);
+    }
+
+    private Usuario current(Authentication auth) {
+        return usuarios.findById(TokenService.userId(auth))
+                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "session_expired"));
+    }
+}
