@@ -42,3 +42,14 @@ public class AuthController {
     }
 
     @PostMapping("/login")
+    public AuthResponse login(@Valid @RequestBody AuthRequests.Login request) {
+        Usuario usuario = usuarios.findByCorreo(normalize(request.email()))
+                .filter(u -> passwordEncoder.matches(request.password(), u.getContrasenaHash()))
+                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "invalid_credentials"));
+        return new AuthResponse(tokens.createToken(usuario.getId()), UserDto.from(usuario));
+    }
+
+    static String normalize(String email) {
+        return email.trim().toLowerCase(Locale.ROOT);
+    }
+}
