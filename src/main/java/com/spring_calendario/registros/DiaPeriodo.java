@@ -12,3 +12,17 @@ import java.util.UUID;
 @Table(name = "dias_periodo")
 public class DiaPeriodo {
 
+    @Id
+    private UUID id;
+
+    @Column(name = "usuario_id", nullable = false)
+    private UUID usuarioId;
+
+    @Column(nullable = false)
+    private LocalDate fecha;
+
+    @Column(nullable = false, length = 10)
+    private String flujo;
+
+    protected DiaPeriodo() {}
+
