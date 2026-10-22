@@ -26,3 +26,16 @@ public class DiaPeriodo {
 
     protected DiaPeriodo() {}
 
+    public DiaPeriodo(UUID usuarioId, LocalDate fecha, String flujo) {
+        this.id = UUID.randomUUID();
+        this.usuarioId = usuarioId;
+        this.fecha = fecha;
+        this.flujo = flujo;
+    }
+
+    public UUID getId() { return id; }
+    public UUID getUsuarioId() { return usuarioId; }
+    public LocalDate getFecha() { return fecha; }
+    public String getFlujo() { return flujo; }
+    public void setFlujo(String flujo) { this.flujo = flujo; }
+}
