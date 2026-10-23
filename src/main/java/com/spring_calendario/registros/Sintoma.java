@@ -13,3 +13,19 @@ import java.util.UUID;
 public class Sintoma {
 
     @Id
+    private UUID id;
+
+    @Column(name = "usuario_id", nullable = false)
+    private UUID usuarioId;
+
+    @Column(nullable = false)
+    private LocalDate fecha;
+
+    @Column(nullable = false, length = 20)
+    private String tipo;
+
+    @Column(nullable = false)
+    private short intensidad;
+
+    protected Sintoma() {}
+
