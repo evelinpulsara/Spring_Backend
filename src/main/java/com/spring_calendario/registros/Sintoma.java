@@ -29,3 +29,17 @@ public class Sintoma {
 
     protected Sintoma() {}
 
+    public Sintoma(UUID usuarioId, LocalDate fecha, String tipo, int intensidad) {
+        this.id = UUID.randomUUID();
+        this.usuarioId = usuarioId;
+        this.fecha = fecha;
+        this.tipo = tipo;
+        this.intensidad = (short) intensidad;
+    }
+
+    public UUID getId() { return id; }
+    public UUID getUsuarioId() { return usuarioId; }
+    public LocalDate getFecha() { return fecha; }
+    public String getTipo() { return tipo; }
+    public int getIntensidad() { return intensidad; }
+}
