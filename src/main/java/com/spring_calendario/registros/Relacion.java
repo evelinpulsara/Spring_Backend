@@ -12,3 +12,17 @@ import java.util.UUID;
 @Table(name = "relaciones")
 public class Relacion {
 
+    @Id
+    private UUID id;
+
+    @Column(name = "usuario_id", nullable = false)
+    private UUID usuarioId;
+
+    @Column(nullable = false)
+    private LocalDate fecha;
+
+    @Column(nullable = false, length = 15)
+    private String proteccion;
+
+    protected Relacion() {}
+
