@@ -26,3 +26,16 @@ public class Relacion {
 
     protected Relacion() {}
 
+    public Relacion(UUID usuarioId, LocalDate fecha, String proteccion) {
+        this.id = UUID.randomUUID();
+        this.usuarioId = usuarioId;
+        this.fecha = fecha;
+        this.proteccion = proteccion;
+    }
+
+    public UUID getId() { return id; }
+    public UUID getUsuarioId() { return usuarioId; }
+    public LocalDate getFecha() { return fecha; }
+    public String getProteccion() { return proteccion; }
+    public void setProteccion(String proteccion) { this.proteccion = proteccion; }
+}
