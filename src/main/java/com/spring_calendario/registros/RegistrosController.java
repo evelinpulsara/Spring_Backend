@@ -20,3 +20,23 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+
+/**
+ * Registros de la usuaria con sesión iniciada. Cada usuaria solo ve y cambia
+ * sus propios datos (el id sale del token, nunca de la petición).
+ *
+ * <pre>
+ * GET    /api/period-days            PUT /api/period-days/{fecha}   DELETE /api/period-days/{fecha}
+ * GET    /api/symptoms               PUT /api/symptoms/{fecha}  (reemplaza los síntomas del día)
+ * GET    /api/intimacy               PUT /api/intimacy/{fecha}      DELETE /api/intimacy/{fecha}
+ * </pre>
+ */
+@RestController
+@RequestMapping("/api")
+public class RegistrosController {
+
