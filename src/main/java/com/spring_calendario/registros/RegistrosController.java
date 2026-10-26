@@ -40,3 +40,24 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/api")
 public class RegistrosController {
 
+    private final DiaPeriodoRepository diasPeriodo;
+    private final SintomaRepository sintomas;
+    private final RelacionRepository relaciones;
+
+    public RegistrosController(DiaPeriodoRepository diasPeriodo, SintomaRepository sintomas,
+            RelacionRepository relaciones) {
+        this.diasPeriodo = diasPeriodo;
+        this.sintomas = sintomas;
+        this.relaciones = relaciones;
+    }
+
+    // ── Días de periodo ──────────────────────────────────────────────────────
+
+    public record PeriodDayDto(LocalDate date, String flow) {}
+
+    public record PeriodDayBody(@NotNull @Pattern(regexp = "none|light|medium|heavy") String flow) {}
+
+    @GetMapping("/period-days")
+    public List<PeriodDayDto> periodDays(Authentication auth) {
+        return diasPeriodo.findByUsuarioIdOrderByFechaAsc(user(auth)).stream()
+                .map(d -> new PeriodDayDto(d.getFecha(), d.getFlujo())).toList();
