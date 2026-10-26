@@ -103,3 +103,20 @@ public class RegistrosController {
         UUID id = user(auth);
         Set<String> types = new HashSet<>();
         for (SymptomItem item : items) {
+            if (!types.add(item.type())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Síntoma repetido");
+            }
+        }
+        sintomas.deleteByUsuarioIdAndFecha(id, date);
+        sintomas.flush();
+        items.forEach(i -> sintomas.save(new Sintoma(id, date, i.type(), i.intensity())));
+        return items.stream().map(i -> new SymptomDto(date, i.type(), i.intensity())).toList();
+    }
+
+    // ── Relaciones ───────────────────────────────────────────────────────────
+
+    public record IntimacyDto(LocalDate date, String protection) {}
+
+    public record IntimacyBody(
+            @NotNull @Pattern(regexp = "none|condom|contraceptive|unsure") String protection) {}
+
