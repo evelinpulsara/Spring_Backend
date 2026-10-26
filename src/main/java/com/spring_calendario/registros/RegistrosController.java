@@ -82,3 +82,24 @@ public class RegistrosController {
     }
 
     // ── Síntomas ─────────────────────────────────────────────────────────────
+
+    public record SymptomDto(LocalDate date, String type, int intensity) {}
+
+    public record SymptomItem(
+            @NotNull @Pattern(regexp = "cramps|headache|mood|bloating|acne|fatigue|appetite|sleep") String type,
+            @Min(1) @Max(5) int intensity) {}
+
+    @GetMapping("/symptoms")
+    public List<SymptomDto> symptoms(Authentication auth) {
+        return sintomas.findByUsuarioIdOrderByFechaAsc(user(auth)).stream()
+                .map(s -> new SymptomDto(s.getFecha(), s.getTipo(), s.getIntensidad())).toList();
+    }
+
+    /** Reemplaza todos los síntomas de ese día (lista vacía = borrarlos). */
+    @PutMapping("/symptoms/{date}")
+    @Transactional
+    public List<SymptomDto> saveSymptoms(Authentication auth, @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestBody @Size(max = 8) List<@Valid SymptomItem> items) {
+        UUID id = user(auth);
+        Set<String> types = new HashSet<>();
+        for (SymptomItem item : items) {
