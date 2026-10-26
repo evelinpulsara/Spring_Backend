@@ -61,3 +61,24 @@ public class RegistrosController {
     public List<PeriodDayDto> periodDays(Authentication auth) {
         return diasPeriodo.findByUsuarioIdOrderByFechaAsc(user(auth)).stream()
                 .map(d -> new PeriodDayDto(d.getFecha(), d.getFlujo())).toList();
+    }
+
+    @PutMapping("/period-days/{date}")
+    @Transactional
+    public PeriodDayDto savePeriodDay(Authentication auth, @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @Valid @RequestBody PeriodDayBody body) {
+        UUID id = user(auth);
+        DiaPeriodo dia = diasPeriodo.findByUsuarioIdAndFecha(id, date)
+                .orElseGet(() -> new DiaPeriodo(id, date, body.flow()));
+        dia.setFlujo(body.flow());
+        diasPeriodo.save(dia);
+        return new PeriodDayDto(date, body.flow());
+    }
+
+    @DeleteMapping("/period-days/{date}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deletePeriodDay(Authentication auth, @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        diasPeriodo.deleteByUsuarioIdAndFecha(user(auth), date);
+    }
+
+    // ── Síntomas ─────────────────────────────────────────────────────────────
