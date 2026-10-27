@@ -120,3 +120,19 @@ public class RegistrosController {
     public record IntimacyBody(
             @NotNull @Pattern(regexp = "none|condom|contraceptive|unsure") String protection) {}
 
+    @GetMapping("/intimacy")
+    public List<IntimacyDto> intimacy(Authentication auth) {
+        return relaciones.findByUsuarioIdOrderByFechaAsc(user(auth)).stream()
+                .map(r -> new IntimacyDto(r.getFecha(), r.getProteccion())).toList();
+    }
+
+    @PutMapping("/intimacy/{date}")
+    @Transactional
+    public IntimacyDto saveIntimacy(Authentication auth, @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @Valid @RequestBody IntimacyBody body) {
+        UUID id = user(auth);
+        Relacion r = relaciones.findByUsuarioIdAndFecha(id, date)
+                .orElseGet(() -> new Relacion(id, date, body.protection()));
+        r.setProteccion(body.protection());
+        relaciones.save(r);
+        return new IntimacyDto(date, body.protection());
