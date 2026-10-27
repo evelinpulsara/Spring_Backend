@@ -14,3 +14,19 @@ public record GeminiProperties(
         String baseUrl,
         Duration timeout) {
 
+    /** Modelo principal primero y luego los de respaldo, sin repetidos. */
+    public List<String> modelsToTry() {
+        List<String> models = new ArrayList<>();
+        models.add(model);
+        if (fallbackModels != null) {
+            fallbackModels.stream()
+                    .filter(m -> m != null && !m.isBlank() && !models.contains(m))
+                    .forEach(models::add);
+        }
+        return models;
+    }
+
+    public boolean hasApiKey() {
+        return apiKey != null && !apiKey.isBlank();
+    }
+}
