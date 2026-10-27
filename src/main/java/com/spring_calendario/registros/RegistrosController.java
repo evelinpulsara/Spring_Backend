@@ -136,3 +136,15 @@ public class RegistrosController {
         r.setProteccion(body.protection());
         relaciones.save(r);
         return new IntimacyDto(date, body.protection());
+    }
+
+    @DeleteMapping("/intimacy/{date}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteIntimacy(Authentication auth, @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        relaciones.deleteByUsuarioIdAndFecha(user(auth), date);
+    }
+
+    private static UUID user(Authentication auth) {
+        return TokenService.userId(auth);
+    }
+}
