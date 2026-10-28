@@ -33,3 +33,21 @@ public class GeminiClient implements AiTextGenerator {
                 .build();
         JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
         requestFactory.setReadTimeout(properties.timeout());
+        this.restClient = RestClient.builder()
+                .baseUrl(properties.baseUrl())
+                .requestFactory(requestFactory)
+                .build();
+    }
+
+    @Override
+    public GeneratedText generateJson(
+            String systemInstruction, String userPrompt, Map<String, Object> responseSchema) {
+        if (!properties.hasApiKey()) {
+            throw new AiUnavailableException("Falta configurar GEMINI_API_KEY en el backend.");
+        }
+
+        Map<String, Object> body = Map.of(
+                "systemInstruction", Map.of("parts", List.of(Map.of("text", systemInstruction))),
+                "contents", List.of(Map.of(
+                        "role", "user",
+                        "parts", List.of(Map.of("text", userPrompt)))),
