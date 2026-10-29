@@ -68,3 +68,21 @@ public class GeminiClient implements AiTextGenerator {
                         .body(GeminiResponse.class);
                 String text = response == null ? null : response.firstText();
                 if (text != null && !text.isBlank()) {
+                    return new GeneratedText(text, model);
+                }
+                lastError = new AiUnavailableException("Gemini devolvió una respuesta vacía.");
+                log.warn("Gemini ({}) devolvió una respuesta vacía", model);
+            } catch (RestClientResponseException e) {
+                if (!isRetryable(e.getStatusCode().value())) {
+                    log.warn("Gemini ({}) rechazó la solicitud: HTTP {}", model, e.getStatusCode().value());
+                    throw new AiUnavailableException("Gemini rechazó la solicitud.", e);
+                }
+                log.warn("Gemini ({}) no disponible: HTTP {}. Se prueba otro modelo.", model, e.getStatusCode().value());
+                lastError = e;
+            } catch (RestClientException e) {
+                log.warn("Gemini ({}) no respondió: {}. Se prueba otro modelo.", model, e.getMessage());
+                lastError = e;
+            }
+        }
+        throw new AiUnavailableException("No se pudo contactar a Gemini.", lastError);
+    }
