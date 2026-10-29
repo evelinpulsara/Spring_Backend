@@ -86,3 +86,18 @@ public class GeminiClient implements AiTextGenerator {
         }
         throw new AiUnavailableException("No se pudo contactar a Gemini.", lastError);
     }
+
+    /** Errores temporales o de modelo no disponible: vale la pena probar otro modelo. */
+    private static boolean isRetryable(int status) {
+        return status == 404 || status == 408 || status == 429 || status >= 500;
+    }
+
+    /** Solo los campos de la respuesta de Gemini que usamos. */
+    record GeminiResponse(List<Candidate> candidates) {
+        String firstText() {
+            if (candidates == null) return null;
+            for (Candidate candidate : candidates) {
+                if (candidate.content() == null || candidate.content().parts() == null) continue;
+                StringBuilder text = new StringBuilder();
+                for (Part part : candidate.content().parts()) {
+                    if (part.text() != null && !Boolean.TRUE.equals(part.thought())) {
