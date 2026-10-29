@@ -101,3 +101,18 @@ public class GeminiClient implements AiTextGenerator {
                 StringBuilder text = new StringBuilder();
                 for (Part part : candidate.content().parts()) {
                     if (part.text() != null && !Boolean.TRUE.equals(part.thought())) {
+                        text.append(part.text());
+                    }
+                }
+                if (!text.isEmpty()) return text.toString();
+            }
+            return null;
+        }
+    }
+
+    record Candidate(Content content) {}
+
+    record Content(List<Part> parts) {}
+
+    record Part(String text, Boolean thought) {}
+}
