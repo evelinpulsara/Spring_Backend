@@ -51,3 +51,20 @@ public class GeminiClient implements AiTextGenerator {
                 "contents", List.of(Map.of(
                         "role", "user",
                         "parts", List.of(Map.of("text", userPrompt)))),
+                "generationConfig", Map.of(
+                        "responseMimeType", "application/json",
+                        "responseJsonSchema", responseSchema,
+                        "thinkingConfig", Map.of("thinkingLevel", "LOW")));
+
+        RuntimeException lastError = null;
+        for (String model : properties.modelsToTry()) {
+            try {
+                GeminiResponse response = restClient.post()
+                        .uri("/models/{model}:generateContent", model)
+                        .header("x-goog-api-key", properties.apiKey())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(body)
+                        .retrieve()
+                        .body(GeminiResponse.class);
+                String text = response == null ? null : response.firstText();
+                if (text != null && !text.isBlank()) {
