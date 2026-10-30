@@ -22,3 +22,27 @@ import tools.jackson.databind.ObjectMapper;
 @Service
 public class PredictionService {
 
+    /** Máximo que la IA puede alejarse del cálculo de referencia. */
+    static final int MAX_DAYS_FROM_BASELINE = 10;
+    /** Máximo de días entre el día probable y los extremos de la ventana. */
+    static final int MAX_WINDOW_SIDE = 4;
+    static final int LUTEAL_DAYS = 14;
+
+    static final Map<String, Object> RESPONSE_SCHEMA = Map.of(
+            "type", "object",
+            "properties", Map.of(
+                    "earliestStart", Map.of("type", "string", "description", "YYYY-MM-DD"),
+                    "likelyStart", Map.of("type", "string", "description", "YYYY-MM-DD"),
+                    "latestStart", Map.of("type", "string", "description", "YYYY-MM-DD"),
+                    "periodLength", Map.of("type", "integer"),
+                    "ovulationDate", Map.of("type", "string", "description", "YYYY-MM-DD"),
+                    "confidence", Map.of("type", "string", "enum", List.of("low", "medium", "high")),
+                    "explanation", Map.of("type", "string")),
+            "required", List.of("earliestStart", "likelyStart", "latestStart", "periodLength",
+                    "ovulationDate", "confidence", "explanation"));
+
+    private static final Set<String> CONFIDENCE = Set.of("low", "medium", "high");
+
+    private final AiTextGenerator generator;
+    private final ObjectMapper objectMapper;
+
