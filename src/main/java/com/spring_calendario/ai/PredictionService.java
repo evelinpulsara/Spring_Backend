@@ -118,3 +118,27 @@ public class PredictionService {
         boolean adjusted = false;
 
         LocalDate lastStart = request.cycles().stream()
+                .map(CycleDto::startDate).max(Comparator.naturalOrder()).orElse(null);
+        LocalDate minStart = lastStart == null ? request.today().minusDays(60) : lastStart.plusDays(15);
+
+        LocalDate likely = ai.likely();
+        if (likely == null
+                || Math.abs(ChronoUnit.DAYS.between(baseline.nextStart(), likely)) > MAX_DAYS_FROM_BASELINE
+                || likely.isBefore(minStart)) {
+            likely = baseline.nextStart();
+            adjusted = true;
+        }
+
+        LocalDate earliest = ai.earliest();
+        if (earliest == null || earliest.isAfter(likely)
+                || ChronoUnit.DAYS.between(earliest, likely) > MAX_WINDOW_SIDE) {
+            earliest = likely.minusDays(1);
+            adjusted = true;
+        }
+        LocalDate latest = ai.latest();
+        if (latest == null || latest.isBefore(likely)
+                || ChronoUnit.DAYS.between(likely, latest) > MAX_WINDOW_SIDE) {
+            latest = likely.plusDays(1);
+            adjusted = true;
+        }
+
