@@ -94,3 +94,27 @@ public class PredictionService {
         sb.append("- Regularidad: ").append(p.regularity()).append('\n');
         sb.append("- Duración típica del periodo: ").append(p.typicalPeriodLength()).append(" días\n");
         sb.append("- Duración típica del ciclo: ").append(p.typicalCycleLength()).append(" días\n");
+
+        sb.append("\nCICLOS REGISTRADOS (inicio, días de sangrado, duración del ciclo):\n");
+        List<CycleDto> cycles = request.cycles().stream()
+                .sorted(Comparator.comparing(CycleDto::startDate)).toList();
+        if (cycles.isEmpty()) {
+            sb.append("- Ninguno\n");
+        } else {
+            cycles.forEach(c -> sb.append("- ").append(c.startDate())
+                    .append(", ").append(c.periodLength()).append(" días, ")
+                    .append(c.cycleLength() == null ? "en curso" : c.cycleLength() + " días")
+                    .append('\n'));
+        }
+        sb.append("\nCÁLCULO SIMPLE DE REFERENCIA (promedios): próximo inicio ").append(b.nextStart())
+                .append(", duración ").append(b.periodLength()).append(" días, ovulación ")
+                .append(b.ovulation()).append('\n');
+        return sb.toString();
+    }
+
+    /** Corrige valores poco realistas usando el cálculo de referencia. */
+    PredictionResponse sanitize(AiPrediction ai, PredictionRequest request, String model) {
+        var baseline = request.baseline();
+        boolean adjusted = false;
+
+        LocalDate lastStart = request.cycles().stream()
