@@ -46,3 +46,27 @@ public class PredictionService {
     private final AiTextGenerator generator;
     private final ObjectMapper objectMapper;
 
+    public PredictionService(AiTextGenerator generator, ObjectMapper objectMapper) {
+        this.generator = generator;
+        this.objectMapper = objectMapper;
+    }
+
+    public PredictionResponse predict(PredictionRequest request) {
+        boolean spanish = "es".equals(request.language());
+        AiTextGenerator.GeneratedText generated =
+                generator.generateJson(systemInstruction(spanish), userPrompt(request), RESPONSE_SCHEMA);
+        AiPrediction raw = parse(generated.text());
+        return sanitize(raw, request, generated.model());
+    }
+
+    String systemInstruction(boolean spanish) {
+        String language = spanish ? "español neutro" : "English";
+        return """
+                Eres el motor de predicción del ciclo menstrual de la app "Spring" (proyecto académico).
+                Tu tarea: predecir cuándo empezará el PRÓXIMO periodo, cuántos días durará y la ovulación.
+                Reglas:
+                - Usa los ciclos registrados; da más peso a los más recientes. Si hay pocos ciclos (0–2), \
+                apóyate en el perfil (duración típica del ciclo y del periodo).
+                - "likelyStart" es el día más probable. "earliestStart" y "latestStart" forman la ventana \
+                de días posibles: 1–3 días de ancho total si el ciclo es regular y hay 3+ ciclos parecidos; \
+                3–7 días si es irregular, si es adolescente (sus ciclos varían más: 21–45 días es normal) \
