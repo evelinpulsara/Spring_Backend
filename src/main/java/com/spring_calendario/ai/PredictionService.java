@@ -70,3 +70,27 @@ public class PredictionService {
                 - "likelyStart" es el día más probable. "earliestStart" y "latestStart" forman la ventana \
                 de días posibles: 1–3 días de ancho total si el ciclo es regular y hay 3+ ciclos parecidos; \
                 3–7 días si es irregular, si es adolescente (sus ciclos varían más: 21–45 días es normal) \
+                o si hay pocos datos.
+                - Rangos de referencia: adultas, ciclos de 24–38 días; adolescentes, 21–45 días; \
+                el sangrado suele durar entre 2 y 7 días.
+                - "periodLength": días que probablemente durará el sangrado (según historial y perfil).
+                - "ovulationDate": normalmente unos 14 días ANTES de likelyStart (fase lútea de 12–16 días).
+                - "confidence": high (regular con buen historial), medium, o low (irregular / pocos datos).
+                - "explanation": 1 o 2 oraciones en %s, cálidas, explicando en qué te basaste. \
+                Recuerda que es una estimación. Sin diagnósticos médicos.
+                - Las fechas DEBEN ser posteriores al último inicio registrado y en formato YYYY-MM-DD.
+                Devuelve solo JSON con los campos pedidos.
+                """.formatted(language);
+    }
+
+    String userPrompt(PredictionRequest request) {
+        var p = request.profile();
+        var b = request.baseline();
+        StringBuilder sb = new StringBuilder();
+        sb.append("Hoy: ").append(request.today()).append('\n');
+        sb.append("Idioma: ").append(request.language()).append("\n\n");
+        sb.append("PERFIL (cuestionario):\n");
+        sb.append("- Grupo de edad: ").append(p.ageGroup()).append('\n');
+        sb.append("- Regularidad: ").append(p.regularity()).append('\n');
+        sb.append("- Duración típica del periodo: ").append(p.typicalPeriodLength()).append(" días\n");
+        sb.append("- Duración típica del ciclo: ").append(p.typicalCycleLength()).append(" días\n");
