@@ -26,3 +26,31 @@ public record InsightRequest(
         return intimacy == null ? List.of() : intimacy;
     }
 
+    public record SymptomDto(
+            @NotNull LocalDate date,
+            @NotBlank @Size(max = 30) String type,
+            @Min(1) @Max(5) int intensity) {}
+
+    public record CycleDto(
+            @NotNull LocalDate startDate,
+            @Min(1) @Max(30) int periodLength,
+            @Min(1) @Max(120) Integer cycleLength) {}
+
+    /**
+     * Relación sexual registrada, con el riesgo que ya calculó la app
+     * según la ventana fértil estimada.
+     */
+    public record IntimacyDto(
+            @NotNull LocalDate date,
+            @NotNull @Pattern(regexp = "none|condom|contraceptive|unsure") String protection,
+            boolean inFertileWindow,
+            boolean ovulationDay,
+            @NotNull @Pattern(regexp = "low|moderate|high") String risk,
+            @Min(0) @Max(400) int daysAgo) {}
+
+    public record PredictionDto(
+            @Min(1) @Max(120) int cycleDay,
+            @Min(1) @Max(120) int cycleLength,
+            @NotBlank @Size(max = 30) String phase,
+            @Min(-30) @Max(120) int daysUntilNextPeriod) {}
+}
