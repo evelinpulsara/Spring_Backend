@@ -142,3 +142,23 @@ public class PredictionService {
             adjusted = true;
         }
 
+        int periodLength = ai.periodLength() == null ? baseline.periodLength() : ai.periodLength();
+        if (periodLength < 2 || periodLength > 10) {
+            periodLength = Math.max(2, Math.min(10, baseline.periodLength()));
+            adjusted = true;
+        }
+
+        LocalDate ovulation = ai.ovulation();
+        if (ovulation == null) {
+            ovulation = likely.minusDays(LUTEAL_DAYS);
+            adjusted = true;
+        } else {
+            long daysBefore = ChronoUnit.DAYS.between(ovulation, likely);
+            if (daysBefore < 10 || daysBefore > 17) {
+                ovulation = likely.minusDays(LUTEAL_DAYS);
+                adjusted = true;
+            }
+        }
+
+        String confidence = ai.confidence() != null && CONFIDENCE.contains(ai.confidence())
+                ? ai.confidence() : "medium";
