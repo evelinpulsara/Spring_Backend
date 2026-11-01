@@ -162,3 +162,23 @@ public class PredictionService {
 
         String confidence = ai.confidence() != null && CONFIDENCE.contains(ai.confidence())
                 ? ai.confidence() : "medium";
+        String explanation = ai.explanation() == null ? "" : ai.explanation().trim();
+
+        return new PredictionResponse(
+                earliest, likely, latest, periodLength, ovulation,
+                ovulation.minusDays(5), ovulation.plusDays(1),
+                confidence, explanation, model, adjusted, Instant.now());
+    }
+
+    AiPrediction parse(String raw) {
+        String json = raw.strip();
+        if (json.startsWith("```")) {
+            json = json.replaceFirst("^```(?:json)?\\s*", "").replaceFirst("\\s*```$", "");
+        }
+        try {
+            RawPrediction r = objectMapper.readValue(json, RawPrediction.class);
+            return new AiPrediction(date(r.earliestStart()), date(r.likelyStart()), date(r.latestStart()),
+                    r.periodLength(), date(r.ovulationDate()), r.confidence(), r.explanation());
+        } catch (JacksonException e) {
+            throw new AiUnavailableException("La IA devolvió un formato no válido.", e);
+        }
