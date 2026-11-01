@@ -182,3 +182,20 @@ public class PredictionService {
         } catch (JacksonException e) {
             throw new AiUnavailableException("La IA devolvió un formato no válido.", e);
         }
+    }
+
+    private static LocalDate date(String value) {
+        if (value == null) return null;
+        try {
+            return LocalDate.parse(value.strip());
+        } catch (DateTimeParseException e) {
+            return null;
+        }
+    }
+
+    record RawPrediction(String earliestStart, String likelyStart, String latestStart,
+            Integer periodLength, String ovulationDate, String confidence, String explanation) {}
+
+    record AiPrediction(LocalDate earliest, LocalDate likely, LocalDate latest,
+            Integer periodLength, LocalDate ovulation, String confidence, String explanation) {}
+}
