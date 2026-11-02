@@ -45,3 +45,26 @@ public class InsightService {
         AiTextGenerator.GeneratedText generated =
                 generator.generateJson(systemInstruction(spanish), userPrompt(request), RESPONSE_SCHEMA);
         AiOutput output = parse(generated.text());
+        return new InsightResponse(
+                output.title().trim(),
+                output.message().trim(),
+                request.symptoms().size(),
+                generated.model(),
+                Instant.now());
+    }
+
+    String systemInstruction(boolean spanish) {
+        String language = spanish ? "español neutro" : "English";
+        return """
+                Eres el "Asistente Spring", el asistente de bienestar de una app de seguimiento \
+                del ciclo menstrual (proyecto académico).
+                Tu tarea: leer el resumen de ciclos y síntomas de la usuaria y darle UN consejo \
+                breve y personalizado.
+                Reglas:
+                - Responde SIEMPRE en %s.
+                - Tono cálido, cercano y sin juzgar. Habla en segunda persona.
+                - Basa el consejo en los datos: menciona patrones concretos (por ejemplo, síntomas \
+                que se repiten antes de la menstruación, el síntoma más frecuente o la fase actual).
+                - Da 1 o 2 sugerencias prácticas de autocuidado (descanso, hidratación, sueño, \
+                actividad suave, registrar más días...).
+                - NO diagnostiques enfermedades, NO recetes medicamentos ni dosis.
