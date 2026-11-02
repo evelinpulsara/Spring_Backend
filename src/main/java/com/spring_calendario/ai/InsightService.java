@@ -23,3 +23,25 @@ public class InsightService {
 
     /** Máximo de síntomas que se envían a la IA (los más recientes). */
     static final int MAX_SYMPTOMS_IN_PROMPT = 120;
+
+    /** Forma de la respuesta: {"title": "...", "message": "..."}. */
+    static final Map<String, Object> RESPONSE_SCHEMA = Map.of(
+            "type", "object",
+            "properties", Map.of(
+                    "title", Map.of("type", "string"),
+                    "message", Map.of("type", "string")),
+            "required", List.of("title", "message"));
+
+    private final AiTextGenerator generator;
+    private final ObjectMapper objectMapper;
+
+    public InsightService(AiTextGenerator generator, ObjectMapper objectMapper) {
+        this.generator = generator;
+        this.objectMapper = objectMapper;
+    }
+
+    public InsightResponse generate(InsightRequest request) {
+        boolean spanish = "es".equals(request.language());
+        AiTextGenerator.GeneratedText generated =
+                generator.generateJson(systemInstruction(spanish), userPrompt(request), RESPONSE_SCHEMA);
+        AiOutput output = parse(generated.text());
