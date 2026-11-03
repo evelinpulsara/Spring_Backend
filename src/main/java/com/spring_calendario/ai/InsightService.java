@@ -92,3 +92,26 @@ public class InsightService {
             sb.append("- Sin predicción (aún no hay menstruaciones registradas).\n");
         } else {
             var p = request.prediction();
+            sb.append("- Día del ciclo: ").append(p.cycleDay()).append(" de ").append(p.cycleLength()).append('\n');
+            sb.append("- Fase actual: ").append(p.phase()).append('\n');
+            sb.append("- Días para la próxima menstruación: ").append(p.daysUntilNextPeriod()).append('\n');
+        }
+
+        sb.append("\nCICLOS REGISTRADOS (inicio, días de sangrado, duración del ciclo):\n");
+        if (request.cycles().isEmpty()) {
+            sb.append("- Ninguno\n");
+        } else {
+            request.cycles().stream()
+                    .sorted(Comparator.comparing(CycleDto::startDate))
+                    .forEach(c -> sb.append("- ").append(c.startDate())
+                            .append(", ").append(c.periodLength()).append(" días, ")
+                            .append(c.cycleLength() == null ? "en curso" : c.cycleLength() + " días")
+                            .append('\n'));
+        }
+
+        sb.append("\nRELACIONES REGISTRADAS (fecha, protección, ¿en ventana fértil?, ¿día de ovulación?, riesgo, hace cuántos días):\n");
+        if (request.intimacyOrEmpty().isEmpty()) {
+            sb.append("- Ninguna\n");
+        } else {
+            request.intimacyOrEmpty().stream()
+                    .sorted(Comparator.comparing(IntimacyDto::date).reversed())
