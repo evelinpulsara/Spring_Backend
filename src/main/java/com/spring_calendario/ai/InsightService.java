@@ -115,3 +115,23 @@ public class InsightService {
         } else {
             request.intimacyOrEmpty().stream()
                     .sorted(Comparator.comparing(IntimacyDto::date).reversed())
+                    .limit(20)
+                    .forEach(i -> sb.append("- ").append(i.date())
+                            .append(", ").append(i.protection())
+                            .append(", fértil=").append(i.inFertileWindow() ? "sí" : "no")
+                            .append(", ovulación=").append(i.ovulationDay() ? "sí" : "no")
+                            .append(", riesgo=").append(i.risk())
+                            .append(", hace ").append(i.daysAgo()).append(" días\n"));
+        }
+
+        List<SymptomDto> symptoms = request.symptoms();
+        sb.append("\nFRECUENCIA DE SÍNTOMAS (total de registros):\n");
+        if (symptoms.isEmpty()) {
+            sb.append("- Ninguno registrado\n");
+        } else {
+            Map<String, Long> counts = symptoms.stream()
+                    .collect(Collectors.groupingBy(SymptomDto::type, Collectors.counting()));
+            counts.entrySet().stream()
+                    .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                    .forEach(e -> sb.append("- ").append(e.getKey()).append(": ").append(e.getValue()).append('\n'));
+
