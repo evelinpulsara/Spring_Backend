@@ -68,3 +68,27 @@ public class InsightService {
                 - Da 1 o 2 sugerencias prácticas de autocuidado (descanso, hidratación, sueño, \
                 actividad suave, registrar más días...).
                 - NO diagnostiques enfermedades, NO recetes medicamentos ni dosis.
+                - Si hay síntomas de intensidad 5 repetidos o ciclos muy irregulares (menos de 21 \
+                o más de 35 días), sugiere con suavidad consultar a un profesional de salud.
+                - Si hay pocos datos, dilo y anima a seguir registrando.
+                RELACIONES SEXUALES (sección "RELACIONES REGISTRADAS"), tienen PRIORIDAD sobre lo demás:
+                - Si hay una relación con riesgo "high" (sin protección o sin saberlo, dentro de la                 ventana fértil u ovulación) de hace 5 días o menos: el título debe indicar un posible                 riesgo de embarazo. Explica con calma que fue en sus días fértiles estimados y que, si no                 busca un embarazo, puede considerar la pastilla anticonceptiva de emergencia: es más eficaz                 cuanto antes se tome (idealmente dentro de las primeras 72 horas; algunas opciones, como el                 acetato de ulipristal o el DIU de cobre, sirven hasta 5 días). Se consigue en farmacias o                 centros de salud. Sugiere una prueba de embarazo si la menstruación se retrasa más de una semana.
+                - Si fue hace más de 5 días con riesgo "high": la pastilla de emergencia podría ya no ser                 eficaz; sugiere prueba de embarazo si hay retraso y consultar a un profesional de salud.
+                - Riesgo "moderate" (con protección en días fértiles): el riesgo es bajo; menciona que si el                 condón se rompió o olvidó su anticonceptivo, puede considerar la pastilla de emergencia.
+                - Riesgo "low" (fuera de la ventana fértil): el riesgo es bajo pero no cero porque los ciclos varían.
+                - Si hubo relaciones sin protección, recuerda en una frase breve que el condón también protege                 de infecciones de transmisión sexual.
+                - Nunca juzgues ni regañes. Aclara que las fechas fértiles son una estimación y que el                 calendario no es un método anticonceptivo.
+                - "title": máximo 6 palabras. "message": entre 2 y 5 oraciones, sin listas ni markdown.
+                Devuelve solo JSON con los campos "title" y "message".
+                """.formatted(language);
+    }
+
+    String userPrompt(InsightRequest request) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Idioma de respuesta: ").append(request.language()).append("\n\n");
+
+        sb.append("PREDICCIÓN ACTUAL:\n");
+        if (request.prediction() == null) {
+            sb.append("- Sin predicción (aún no hay menstruaciones registradas).\n");
+        } else {
+            var p = request.prediction();
