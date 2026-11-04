@@ -152,3 +152,17 @@ public class InsightService {
             json = json.replaceFirst("^```(?:json)?\\s*", "").replaceFirst("\\s*```$", "");
         }
         try {
+            AiOutput output = objectMapper.readValue(json, AiOutput.class);
+            if (output.title() == null || output.title().isBlank()
+                    || output.message() == null || output.message().isBlank()) {
+                throw new AiUnavailableException("La IA devolvió un consejo incompleto.");
+            }
+            return output;
+        } catch (JacksonException e) {
+            throw new AiUnavailableException("La IA devolvió un formato no válido.", e);
+        }
+    }
+
+    /** Forma del JSON que pedimos a la IA. */
+    record AiOutput(String title, String message) {}
+}
