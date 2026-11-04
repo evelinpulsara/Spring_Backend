@@ -16,3 +16,21 @@ import org.springframework.web.bind.annotation.RestController;
 public class InsightController {
 
     private final InsightService insightService;
+    private final PredictionService predictionService;
+
+    public InsightController(InsightService insightService, PredictionService predictionService) {
+        this.insightService = insightService;
+        this.predictionService = predictionService;
+    }
+
+    @PostMapping("/insight")
+    public InsightResponse insight(@Valid @RequestBody InsightRequest request) {
+        return insightService.generate(request);
+    }
+
+    /** Predicción del próximo periodo con IA: POST /api/ai/prediction */
+    @PostMapping("/prediction")
+    public PredictionResponse prediction(@Valid @RequestBody PredictionRequest request) {
+        return predictionService.predict(request);
+    }
+}
