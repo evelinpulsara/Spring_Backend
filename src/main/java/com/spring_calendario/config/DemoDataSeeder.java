@@ -60,3 +60,31 @@ public class DemoDataSeeder implements ApplicationRunner {
         Usuario demo = usuarios.save(new Usuario("Luna", DEMO_EMAIL, passwordEncoder.encode(DEMO_PASSWORD)));
         UUID id = demo.getId();
         LocalDate today = LocalDate.now();
+
+        List<LocalDate> starts = new ArrayList<>();
+        LocalDate start = today.minusDays(9);
+        starts.add(start);
+        for (int length : CYCLE_LENGTHS) {
+            start = start.minusDays(length);
+            starts.add(start);
+        }
+
+        for (int i = 0; i < starts.size(); i++) {
+            for (int d = 0; d < PERIOD_DAYS[i]; d++) {
+                diasPeriodo.save(new DiaPeriodo(id, starts.get(i).plusDays(d), "medium"));
+            }
+            sintomas.save(new Sintoma(id, starts.get(i), "cramps", 4));
+            sintomas.save(new Sintoma(id, starts.get(i).plusDays(1), "cramps", 3));
+            if (i > 0) {
+                for (int d = 1; d <= 4; d++) {
+                    LocalDate date = starts.get(i - 1).minusDays(d);
+                    sintomas.save(new Sintoma(id, date, "bloating", 3));
+                    sintomas.save(new Sintoma(id, date, "fatigue", 3));
+                }
+            }
+        }
+        sintomas.save(new Sintoma(id, today, "mood", 4));
+        sintomas.save(new Sintoma(id, today, "sleep", 3));
+        log.info("Cuenta de prueba creada: {}", DEMO_EMAIL);
+    }
+}
