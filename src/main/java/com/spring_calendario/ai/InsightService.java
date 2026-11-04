@@ -135,3 +135,20 @@ public class InsightService {
                     .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
                     .forEach(e -> sb.append("- ").append(e.getKey()).append(": ").append(e.getValue()).append('\n'));
 
+            sb.append("\nSÍNTOMAS RECIENTES (fecha, síntoma, intensidad 1-5):\n");
+            symptoms.stream()
+                    .sorted(Comparator.comparing(SymptomDto::date).reversed())
+                    .limit(MAX_SYMPTOMS_IN_PROMPT)
+                    .forEach(s -> sb.append("- ").append(s.date()).append(", ")
+                            .append(s.type()).append(", ").append(s.intensity()).append('\n'));
+        }
+        return sb.toString();
+    }
+
+    private AiOutput parse(String raw) {
+        String json = raw.strip();
+        // Por si el modelo envuelve el JSON en ```json ... ```
+        if (json.startsWith("```")) {
+            json = json.replaceFirst("^```(?:json)?\\s*", "").replaceFirst("\\s*```$", "");
+        }
+        try {
