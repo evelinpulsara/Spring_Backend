@@ -77,3 +77,30 @@ class PredictionServiceTest {
         PredictionResponse r = serviceReturning("""
                 {"earliestStart":"2027-03-01","likelyStart":"2027-03-05","latestStart":"2027-03-20",
                  "periodLength":20,"ovulationDate":"2027-01-01","confidence":"rarísima","explanation":"x"}""")
+                .predict(request());
+
+        assertThat(r.likelyStart()).isEqualTo(LocalDate.of(2026, 11, 20)); // referencia
+        assertThat(r.earliestStart()).isEqualTo(LocalDate.of(2026, 11, 19));
+        assertThat(r.latestStart()).isEqualTo(LocalDate.of(2026, 11, 21));
+        assertThat(r.periodLength()).isEqualTo(5);
+        assertThat(r.ovulationDate()).isEqualTo(LocalDate.of(2026, 11, 6));
+        assertThat(r.confidence()).isEqualTo("medium");
+        assertThat(r.adjusted()).isTrue();
+    }
+
+    @Test
+    void noAceptaUnInicioAntesDelUltimoPeriodo() {
+        PredictionResponse r = serviceReturning("""
+                {"earliestStart":"2026-10-24","likelyStart":"2026-10-25","latestStart":"2026-10-26",
+                 "periodLength":5,"ovulationDate":"2026-10-11","confidence":"low","explanation":"x"}""")
+                .predict(request());
+        assertThat(r.likelyStart()).isEqualTo(LocalDate.of(2026, 11, 20));
+        assertThat(r.adjusted()).isTrue();
+    }
+
+    @Test
+    void fallaSiNoEsJson() {
+        assertThatThrownBy(() -> serviceReturning("hola").predict(request()))
+                .isInstanceOf(AiUnavailableException.class);
+    }
+}
