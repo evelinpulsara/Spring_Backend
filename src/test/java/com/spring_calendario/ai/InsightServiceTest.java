@@ -58,3 +58,33 @@ class InsightServiceTest {
 
     @Test
     void elPromptIncluyeLosDatosDelCicloYSintomas() {
+        serviceReturning("{\"title\":\"t\",\"message\":\"m\"}").generate(sampleRequest("es"));
+
+        assertThat(lastSystem.get()).contains("español").contains("NO diagnostiques");
+        assertThat(lastPrompt.get())
+                .contains("Día del ciclo: 12 de 28")
+                .contains("Fase actual: follicular")
+                .contains("- cramps: 2")
+                .contains("2026-10-03, cramps, 4")
+                .contains("en curso");
+    }
+
+    @Test
+    void respondeEnInglesSiSeLoPide() {
+        serviceReturning("{\"title\":\"t\",\"message\":\"m\"}").generate(sampleRequest("en"));
+        assertThat(lastSystem.get()).contains("English");
+    }
+
+    @Test
+    void aceptaJsonEnvueltoEnBloqueDeCodigo() {
+        InsightService service = serviceReturning("```json\n{\"title\":\"Hola\",\"message\":\"Todo bien.\"}\n```");
+        assertThat(service.generate(sampleRequest("es")).title()).isEqualTo("Hola");
+    }
+
+    @Test
+    void fallaConRespuestaInvalida() {
+        InsightService service = serviceReturning("esto no es json");
+        assertThatThrownBy(() -> service.generate(sampleRequest("es")))
+                .isInstanceOf(AiUnavailableException.class);
+    }
+
