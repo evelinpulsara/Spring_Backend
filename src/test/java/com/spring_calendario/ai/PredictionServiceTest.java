@@ -51,3 +51,29 @@ class PredictionServiceTest {
         assertThat(r.likelyStart()).isEqualTo(LocalDate.of(2026, 11, 21));
         assertThat(r.latestStart()).isEqualTo(LocalDate.of(2026, 11, 22));
         assertThat(r.ovulationDate()).isEqualTo(LocalDate.of(2026, 11, 7));
+        assertThat(r.fertileStart()).isEqualTo(LocalDate.of(2026, 11, 2));
+        assertThat(r.fertileEnd()).isEqualTo(LocalDate.of(2026, 11, 8));
+        assertThat(r.confidence()).isEqualTo("high");
+        assertThat(r.model()).isEqualTo("gemini-test");
+        assertThat(r.adjusted()).isFalse();
+    }
+
+    @Test
+    void elPromptIncluyePerfilCiclosYReferencia() {
+        serviceReturning("""
+                {"earliestStart":"2026-11-20","likelyStart":"2026-11-20","latestStart":"2026-11-21",
+                 "periodLength":5,"ovulationDate":"2026-11-06","confidence":"high","explanation":"x"}""")
+                .predict(request());
+        assertThat(lastPrompt.get())
+                .contains("Grupo de edad: adult")
+                .contains("Duración típica del ciclo: 29 días")
+                .contains("2026-10-22, 5 días, en curso")
+                .contains("próximo inicio 2026-11-20");
+        assertThat(lastSystem.get()).contains("adolescentes, 21–45 días").contains("español");
+    }
+
+    @Test
+    void corrigeFechasPocoRealistas() {
+        PredictionResponse r = serviceReturning("""
+                {"earliestStart":"2027-03-01","likelyStart":"2027-03-05","latestStart":"2027-03-20",
+                 "periodLength":20,"ovulationDate":"2027-01-01","confidence":"rarísima","explanation":"x"}""")
