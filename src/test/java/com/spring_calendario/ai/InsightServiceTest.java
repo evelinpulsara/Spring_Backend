@@ -28,3 +28,33 @@ class InsightServiceTest {
         };
         return new InsightService(fake, JsonMapper.builder().build());
     }
+
+    private static InsightRequest sampleRequest(String language) {
+        return new InsightRequest(
+                language,
+                List.of(
+                        new SymptomDto(LocalDate.of(2026, 10, 3), "cramps", 4),
+                        new SymptomDto(LocalDate.of(2026, 10, 2), "cramps", 3),
+                        new SymptomDto(LocalDate.of(2026, 10, 1), "headache", 2)),
+                List.of(
+                        new CycleDto(LocalDate.of(2026, 9, 5), 5, 28),
+                        new CycleDto(LocalDate.of(2026, 10, 3), 4, null)),
+                new PredictionDto(12, 28, "follicular", 17),
+                null);
+    }
+
+    @Test
+    void devuelveElConsejoDeLaIa() {
+        InsightService service = serviceReturning(
+                "{\"title\":\"Cólicos frecuentes\",\"message\":\"Notamos cólicos al inicio de tu ciclo.\"}");
+
+        InsightResponse response = service.generate(sampleRequest("es"));
+
+        assertThat(response.title()).isEqualTo("Cólicos frecuentes");
+        assertThat(response.message()).isEqualTo("Notamos cólicos al inicio de tu ciclo.");
+        assertThat(response.basedOnEntries()).isEqualTo(3);
+        assertThat(response.model()).isEqualTo("gemini-test");
+    }
+
+    @Test
+    void elPromptIncluyeLosDatosDelCicloYSintomas() {
