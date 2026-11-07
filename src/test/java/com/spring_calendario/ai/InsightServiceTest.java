@@ -88,3 +88,33 @@ class InsightServiceTest {
                 .isInstanceOf(AiUnavailableException.class);
     }
 
+    @Test
+    void fallaSiFaltaElMensaje() {
+        InsightService service = serviceReturning("{\"title\":\"Hola\"}");
+        assertThatThrownBy(() -> service.generate(sampleRequest("es")))
+                .isInstanceOf(AiUnavailableException.class);
+    }
+
+    @Test
+    void elPromptIncluyeLasRelacionesYLasReglasDeRiesgo() {
+        InsightRequest base = sampleRequest("es");
+        InsightRequest withIntimacy = new InsightRequest(base.language(), base.symptoms(), base.cycles(),
+                base.prediction(),
+                List.of(new IntimacyDto(LocalDate.of(2026, 10, 14), "none", true, true, "high", 2)));
+
+        serviceReturning("{\"title\":\"t\",\"message\":\"m\"}").generate(withIntimacy);
+
+        assertThat(lastPrompt.get())
+                .contains("RELACIONES REGISTRADAS")
+                .contains("2026-10-14, none, fértil=sí, ovulación=sí, riesgo=high, hace 2 días");
+        assertThat(lastSystem.get())
+                .contains("pastilla anticonceptiva de emergencia")
+                .contains("72 horas");
+    }
+
+    @Test
+    void sinRelacionesLoIndica() {
+        serviceReturning("{\"title\":\"t\",\"message\":\"m\"}").generate(sampleRequest("es"));
+        assertThat(lastPrompt.get()).contains("RELACIONES REGISTRADAS").contains("- Ninguna");
+    }
+}
