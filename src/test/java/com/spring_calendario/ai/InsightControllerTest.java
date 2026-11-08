@@ -49,3 +49,25 @@ class InsightControllerTest {
     }
 
     @Test
+    void rechazaDatosInvalidos() throws Exception {
+        String invalid = VALID_BODY.replace("\"intensity\":4", "\"intensity\":9");
+        mvc.perform(post("/api/ai/insight").contentType(MediaType.APPLICATION_JSON).content(invalid))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void devuelve503SiLaIaNoEstaDisponible() throws Exception {
+        when(service.generate(any())).thenThrow(new AiUnavailableException("Falta configurar GEMINI_API_KEY."));
+
+        mvc.perform(post("/api/ai/insight").contentType(MediaType.APPLICATION_JSON).content(VALID_BODY))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.error").value("Falta configurar GEMINI_API_KEY."));
+    }
+
+    @Test
+    void rechazaProteccionDesconocida() throws Exception {
+        String invalid = VALID_BODY.replace("\"protection\":\"none\"", "\"protection\":\"x\"");
+        mvc.perform(post("/api/ai/insight").contentType(MediaType.APPLICATION_JSON).content(invalid))
+                .andExpect(status().isBadRequest());
+    }
+}
