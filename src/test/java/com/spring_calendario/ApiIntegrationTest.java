@@ -46,3 +46,27 @@ class ApiIntegrationTest {
         return JsonPath.read(body, "$.token");
     }
 
+    private static String bearer(String token) {
+        return "Bearer " + token;
+    }
+
+    @Test
+    void registroInicioDeSesionYPerfil() throws Exception {
+        String token = register("Ana@Correo.com");
+
+        // La contraseña se guarda cifrada.
+        assertThat(usuarios.findByCorreo("ana@correo.com").orElseThrow().getContrasenaHash())
+                .startsWith("$2").doesNotContain("secreto123");
+
+        mvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Ana\",\"email\":\"ana@correo.com\",\"password\":\"otra1234\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error").value("email_taken"));
+
+        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"ana@correo.com\",\"password\":\"mal\"}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error").value("invalid_credentials"));
+
+        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\" ANA@correo.com \",\"password\":\"secreto123\"}"))
