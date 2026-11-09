@@ -135,3 +135,20 @@ class ApiIntegrationTest {
                 .andExpect(status().isOk());
         mvc.perform(get("/api/intimacy").header("Authorization", bearer(ana)))
                 .andExpect(jsonPath("$[0].protection").value("none"));
+
+        // Eva no ve nada de Ana.
+        mvc.perform(get("/api/period-days").header("Authorization", bearer(eva)))
+                .andExpect(jsonPath("$.length()").value(0));
+        mvc.perform(get("/api/intimacy").header("Authorization", bearer(eva)))
+                .andExpect(jsonPath("$.length()").value(0));
+
+        mvc.perform(delete("/api/intimacy/2026-11-06").header("Authorization", bearer(ana)))
+                .andExpect(status().isNoContent());
+        mvc.perform(delete("/api/me/data").header("Authorization", bearer(ana)))
+                .andExpect(status().isNoContent());
+        mvc.perform(get("/api/period-days").header("Authorization", bearer(ana)))
+                .andExpect(jsonPath("$.length()").value(0));
+        mvc.perform(get("/api/symptoms").header("Authorization", bearer(ana)))
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
