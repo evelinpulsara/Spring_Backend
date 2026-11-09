@@ -70,3 +70,27 @@ class ApiIntegrationTest {
 
         mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\" ANA@correo.com \",\"password\":\"secreto123\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").isNotEmpty());
+
+        // Cuestionario: después de responderlo queda guardado.
+        mvc.perform(put("/api/me").header("Authorization", bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"Ana","averageCycleLength":32,"averagePeriodDuration":6,
+                                 "ageGroup":"teen","regularity":"irregular","cycleSetupCompleted":true,
+                                 "notifications":{"periodReminders":true,"fertileWindowAlerts":true,
+                                 "dailyLogReminder":false}}"""))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/me").header("Authorization", bearer(token)))
+                .andExpect(jsonPath("$.cycleSetupCompleted").value(true))
+                .andExpect(jsonPath("$.ageGroup").value("teen"))
+                .andExpect(jsonPath("$.averagePeriodDuration").value(6))
+                .andExpect(jsonPath("$.notifications.fertileWindowAlerts").value(true));
+    }
+
+    @Test
+    void sinSesionNoSePuedeEntrar() throws Exception {
+        mvc.perform(get("/api/me")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/period-days")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/me").header("Authorization", "Bearer token-falso"))
