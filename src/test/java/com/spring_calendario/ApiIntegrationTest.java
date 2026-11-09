@@ -94,3 +94,27 @@ class ApiIntegrationTest {
         mvc.perform(get("/api/me")).andExpect(status().isUnauthorized());
         mvc.perform(get("/api/period-days")).andExpect(status().isUnauthorized());
         mvc.perform(get("/api/me").header("Authorization", "Bearer token-falso"))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/health")).andExpect(status().isOk());
+    }
+
+    @Test
+    void registrosYAislamientoEntreUsuarias() throws Exception {
+        String ana = register("ana2@correo.com");
+        String eva = register("eva@correo.com");
+
+        mvc.perform(put("/api/period-days/2026-10-22").header("Authorization", bearer(ana))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"flow\":\"heavy\"}"))
+                .andExpect(status().isOk());
+        mvc.perform(put("/api/period-days/2026-10-22").header("Authorization", bearer(ana))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"flow\":\"light\"}"))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/period-days").header("Authorization", bearer(ana)))
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].date").value("2026-10-22"))
+                .andExpect(jsonPath("$[0].flow").value("light"));
+
+        mvc.perform(put("/api/symptoms/2026-10-22").header("Authorization", bearer(ana))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[{\"type\":\"cramps\",\"intensity\":4},{\"type\":\"fatigue\",\"intensity\":2}]"))
+                .andExpect(status().isOk());
