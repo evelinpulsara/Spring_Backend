@@ -118,3 +118,20 @@ class ApiIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("[{\"type\":\"cramps\",\"intensity\":4},{\"type\":\"fatigue\",\"intensity\":2}]"))
                 .andExpect(status().isOk());
+        mvc.perform(put("/api/symptoms/2026-10-22").header("Authorization", bearer(ana))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[{\"type\":\"mood\",\"intensity\":3}]"))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/symptoms").header("Authorization", bearer(ana)))
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].type").value("mood"));
+        mvc.perform(put("/api/symptoms/2026-10-22").header("Authorization", bearer(ana))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[{\"type\":\"mood\",\"intensity\":9}]"))
+                .andExpect(status().isBadRequest());
+
+        mvc.perform(put("/api/intimacy/2026-11-06").header("Authorization", bearer(ana))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"protection\":\"none\"}"))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/intimacy").header("Authorization", bearer(ana)))
+                .andExpect(jsonPath("$[0].protection").value("none"));
