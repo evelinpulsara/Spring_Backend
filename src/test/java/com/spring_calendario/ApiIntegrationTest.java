@@ -152,3 +152,21 @@ class ApiIntegrationTest {
                 .andExpect(jsonPath("$.length()").value(0));
     }
 
+    @Test
+    void laCuentaDePruebaExisteConDatos() throws Exception {
+        String body = mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"demo@spring.app\",\"password\":\"Spring1234\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.user.cycleSetupCompleted").value(false))
+                .andReturn().getResponse().getContentAsString();
+        String token = JsonPath.read(body, "$.token");
+        mvc.perform(get("/api/period-days").header("Authorization", bearer(token)))
+                .andExpect(jsonPath("$.length()").value(30));
+    }
+
+    @Test
+    void laIaPideSesion() throws Exception {
+        mvc.perform(post("/api/ai/insight").contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isUnauthorized());
+    }
+}
