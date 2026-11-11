@@ -71,3 +71,35 @@ modificar sus propios datos.
    - `DB_URL` = `jdbc:postgresql://aws-0-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require`
    - `DB_USERNAME` = `postgres.abcd1234`
    - `DB_PASSWORD` = tu contraseña
+
+### 2. Backend en Render
+1. Entra a https://render.com con tu cuenta de GitHub → **New → Web Service** →
+   elige el repositorio `Spring_Backend` (Render detecta el `Dockerfile`).
+2. Plan **Free**. En **Environment** agrega:
+   `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `GEMINI_API_KEY`,
+   `JWT_SECRET` (una frase larga y secreta) y
+   `CORS_ALLOWED_ORIGINS` = la URL de Vercel (ej. `https://spring-calendario.vercel.app`).
+3. Al terminar tendrás una URL como `https://spring-backend.onrender.com`.
+   Pruébala en `/api/health`.
+   (El plan gratis se "duerme" tras 15 min sin uso: la primera petición tarda ~1 min.)
+
+### 3. Frontend en Vercel
+Ver el README del frontend: variable `API_URL` = la URL de Render.
+
+## Tests
+
+```bash
+./mvnw test
+```
+
+## Variables de entorno
+
+| Variable | Para qué |
+|----------|----------|
+| `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` | Base de datos PostgreSQL (Supabase). Sin ellas, base local |
+| `JWT_SECRET` | Secreto de las sesiones (mínimo 32 caracteres). **Obligatorio en producción** |
+| `GEMINI_API_KEY` | Clave de Gemini |
+| `GEMINI_MODEL` | Modelo (por defecto `gemini-3.8-flash`, con respaldo automático) |
+| `CORS_ALLOWED_ORIGINS` | Páginas que pueden usar la API (agrega la URL de Vercel) |
+| `DEMO_ENABLED` | Crear la cuenta de prueba (`true` / `false`) |
+| `PORT` | Puerto (Render lo define solo) |
