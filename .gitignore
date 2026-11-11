@@ -1,0 +1,16 @@
+# Compilación
+target/
+!.mvn/wrapper/maven-wrapper.properties
+
+# Secretos (aquí va tu GEMINI_API_KEY)
+.env
+
+# Editores / sistema
+.DS_Store
+.idea/
+*.iml
+.vscode/
+*.log
+
+# Base de datos local de desarrollo
+data/
