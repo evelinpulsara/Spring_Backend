@@ -1,0 +1,489 @@
+# Contrato de la API de Spring (contract-first).
+#
+# Este archivo es la FUENTE ÚNICA DE VERDAD (SSOT) de la API: se escribe antes
+# que el código y el frontend (Flutter) y el backend (Spring Boot) lo siguen.
+# El test ContractTest falla si un endpoint del código no está aquí o al revés.
+#
+# Verlo en el navegador:  <backend>/docs.html   (Swagger UI)
+openapi: 3.1.0
+info:
+  title: Spring API
+  version: 1.0.0
+  description: >
+    API del calendario menstrual Spring. Las cuentas usan JWT (header
+    "Authorization: Bearer <token>"). Los datos se validan en tiempo de
+    ejecución con Bean Validation: si algo no cumple el contrato la respuesta
+    es 400 con {"error": "..."}.
+servers:
+  - url: https://spring-backend-veif.onrender.com
+    description: Producción (Render)
+  - url: http://localhost:8080
+    description: Local
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Sistema
+  - name: Cuenta
+  - name: Registros
+  - name: IA
+  - name: Tiempo real
+
+paths:
+  /api/health:
+    get:
+      tags: [Sistema]
+      summary: Comprueba que el backend está encendido
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+
+  /api/auth/register:
+    post:
+      tags: [Cuenta]
+      summary: Crea una cuenta
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegisterRequest" }
+      responses:
+        "201":
+          description: Cuenta creada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "409":
+          description: El correo ya está registrado (error = email_taken)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /api/auth/login:
+    post:
+      tags: [Cuenta]
+      summary: Inicia sesión
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginRequest" }
+      responses:
+        "200":
+          description: Sesión iniciada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthResponse" }
+        "401":
+          description: Correo o contraseña incorrectos (error = invalid_credentials)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /api/me:
+    get:
+      tags: [Cuenta]
+      summary: Datos de la usuaria con sesión iniciada
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    put:
+      tags: [Cuenta]
+      summary: Actualiza el perfil y el cuestionario del ciclo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateProfileRequest" }
+      responses:
+        "200":
+          description: Perfil actualizado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/me/data:
+    delete:
+      tags: [Cuenta]
+      summary: Borra todos los registros (no la cuenta)
+      description: Envía el evento SSE records-changed con resource = all.
+      responses:
+        "204": { description: Registros borrados }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/period-days:
+    get:
+      tags: [Registros]
+      summary: Días de periodo registrados
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PeriodDay" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/period-days/{date}:
+    parameters:
+      - $ref: "#/components/parameters/Date"
+    put:
+      tags: [Registros]
+      summary: Guarda o cambia el flujo de un día
+      description: Envía el evento SSE records-changed con resource = period-days.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [flow]
+              properties:
+                flow: { $ref: "#/components/schemas/Flow" }
+      responses:
+        "200":
+          description: Guardado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PeriodDay" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    delete:
+      tags: [Registros]
+      summary: Borra un día de periodo
+      responses:
+        "204": { description: Borrado }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/symptoms:
+    get:
+      tags: [Registros]
+      summary: Síntomas registrados
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Symptom" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/symptoms/{date}:
+    parameters:
+      - $ref: "#/components/parameters/Date"
+    put:
+      tags: [Registros]
+      summary: Reemplaza los síntomas de un día (lista vacía = borrarlos)
+      description: Envía el evento SSE records-changed con resource = symptoms.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              maxItems: 8
+              items:
+                type: object
+                required: [type, intensity]
+                properties:
+                  type: { $ref: "#/components/schemas/SymptomType" }
+                  intensity: { type: integer, minimum: 1, maximum: 5 }
+      responses:
+        "200":
+          description: Guardado
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Symptom" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/intimacy:
+    get:
+      tags: [Registros]
+      summary: Relaciones registradas
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Intimacy" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/intimacy/{date}:
+    parameters:
+      - $ref: "#/components/parameters/Date"
+    put:
+      tags: [Registros]
+      summary: Guarda una relación
+      description: Envía el evento SSE records-changed con resource = intimacy.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [protection]
+              properties:
+                protection: { $ref: "#/components/schemas/Protection" }
+      responses:
+        "200":
+          description: Guardado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Intimacy" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    delete:
+      tags: [Registros]
+      summary: Borra una relación
+      responses:
+        "204": { description: Borrado }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/ai/insight:
+    post:
+      tags: [IA]
+      summary: Consejo del Asistente Spring (Gemini)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "Ver InsightRequest.java" }
+      responses:
+        "200":
+          description: Consejo generado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Insight" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "503":
+          description: La IA no está disponible; la app usa su respuesta local
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /api/ai/prediction:
+    post:
+      tags: [IA]
+      summary: Predicción del próximo periodo (Gemini)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "Ver PredictionRequest.java" }
+      responses:
+        "200":
+          description: Predicción generada
+          content:
+            application/json:
+              schema: { type: object, description: "Ver PredictionResponse.java" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "503":
+          description: La IA no está disponible; la app calcula la predicción localmente
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /api/events/ticket:
+    post:
+      tags: [Tiempo real]
+      summary: Pide un ticket de un solo uso (30 s) para abrir el stream SSE
+      description: >
+        El EventSource del navegador no puede enviar el header Authorization,
+        por eso la app pide primero este ticket con su token.
+      responses:
+        "200":
+          description: Ticket generado
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ticket]
+                properties:
+                  ticket: { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/events/stream:
+    get:
+      tags: [Tiempo real]
+      summary: Stream de eventos (Server-Sent Events)
+      description: >
+        Conexión persistente servidor → app. Eventos: "connected" al abrir y
+        "records-changed" (datos = RealtimeEvent) cuando cambian los registros
+        de la usuaria en cualquier dispositivo. Cada 25 s llega un comentario
+        ": ping" para mantener viva la conexión.
+      security: []
+      parameters:
+        - name: ticket
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Stream abierto
+          content:
+            text/event-stream:
+              schema: { $ref: "#/components/schemas/RealtimeEvent" }
+        "401":
+          description: Ticket inválido, usado o vencido (error = invalid_ticket)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    Date:
+      name: date
+      in: path
+      required: true
+      description: Fecha en formato YYYY-MM-DD
+      schema: { type: string, format: date }
+
+  responses:
+    BadRequest:
+      description: Los datos no cumplen el contrato
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Unauthorized:
+      description: Falta la sesión o venció
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+
+    Flow:
+      type: string
+      enum: [none, light, medium, heavy]
+    SymptomType:
+      type: string
+      enum: [cramps, headache, mood, bloating, acne, fatigue, appetite, sleep]
+    Protection:
+      type: string
+      enum: [none, condom, contraceptive, unsure]
+
+    RegisterRequest:
+      type: object
+      required: [name, email, password]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 100 }
+        email: { type: string, format: email, maxLength: 255 }
+        password: { type: string, minLength: 6, maxLength: 72 }
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string }
+        password: { type: string }
+    AuthResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token: { type: string }
+        user: { $ref: "#/components/schemas/User" }
+
+    Notifications:
+      type: object
+      required: [periodReminders, fertileWindowAlerts, dailyLogReminder]
+      properties:
+        periodReminders: { type: boolean }
+        fertileWindowAlerts: { type: boolean }
+        dailyLogReminder: { type: boolean }
+    User:
+      type: object
+      required: [id, name, email, averageCycleLength, averagePeriodDuration,
+                 ageGroup, regularity, cycleSetupCompleted, notifications]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        email: { type: string }
+        averageCycleLength: { type: integer }
+        averagePeriodDuration: { type: integer }
+        ageGroup: { type: string, enum: [teen, adult, unknown] }
+        regularity: { type: string, enum: [regular, irregular, unsure] }
+        cycleSetupCompleted: { type: boolean }
+        notifications: { $ref: "#/components/schemas/Notifications" }
+    UpdateProfileRequest:
+      type: object
+      required: [name, averageCycleLength, averagePeriodDuration, ageGroup,
+                 regularity, cycleSetupCompleted, notifications]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 100 }
+        averageCycleLength: { type: integer, minimum: 15, maximum: 60 }
+        averagePeriodDuration: { type: integer, minimum: 1, maximum: 15 }
+        ageGroup: { type: string, enum: [teen, adult, unknown] }
+        regularity: { type: string, enum: [regular, irregular, unsure] }
+        cycleSetupCompleted: { type: boolean }
+        notifications: { $ref: "#/components/schemas/Notifications" }
+
+    PeriodDay:
+      type: object
+      required: [date, flow]
+      properties:
+        date: { type: string, format: date }
+        flow: { $ref: "#/components/schemas/Flow" }
+    Symptom:
+      type: object
+      required: [date, type, intensity]
+      properties:
+        date: { type: string, format: date }
+        type: { $ref: "#/components/schemas/SymptomType" }
+        intensity: { type: integer, minimum: 1, maximum: 5 }
+    Intimacy:
+      type: object
+      required: [date, protection]
+      properties:
+        date: { type: string, format: date }
+        protection: { $ref: "#/components/schemas/Protection" }
+
+    Insight:
+      type: object
+      properties:
+        title: { type: string }
+        message: { type: string }
+        basedOnEntries: { type: integer }
+        model: { type: string }
+        generatedAt: { type: string, format: date-time }
+
+    RealtimeEvent:
+      type: object
+      required: [type, resource, at]
+      properties:
+        type: { type: string, enum: [records-changed] }
+        resource: { type: string, enum: [period-days, symptoms, intimacy, all] }
+        at: { type: string, format: date-time }
