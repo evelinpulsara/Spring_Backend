@@ -4,6 +4,7 @@ import com.spring_calendario.registros.DiaPeriodoRepository;
 import com.spring_calendario.registros.RelacionRepository;
 import com.spring_calendario.registros.SintomaRepository;
 import com.spring_calendario.seguridad.TokenService;
+import com.spring_calendario.tiemporeal.RecordChangePublisher;
 import com.spring_calendario.usuarios.dto.AuthRequests;
 import com.spring_calendario.usuarios.dto.UserDto;
 import jakarta.validation.Valid;
@@ -28,13 +29,15 @@ public class PerfilController {
     private final DiaPeriodoRepository diasPeriodo;
     private final SintomaRepository sintomas;
     private final RelacionRepository relaciones;
+    private final RecordChangePublisher cambios;
 
     public PerfilController(UsuarioRepository usuarios, DiaPeriodoRepository diasPeriodo,
-            SintomaRepository sintomas, RelacionRepository relaciones) {
+            SintomaRepository sintomas, RelacionRepository relaciones, RecordChangePublisher cambios) {
         this.usuarios = usuarios;
         this.diasPeriodo = diasPeriodo;
         this.sintomas = sintomas;
         this.relaciones = relaciones;
+        this.cambios = cambios;
     }
 
     @GetMapping
@@ -67,6 +70,7 @@ public class PerfilController {
         diasPeriodo.deleteByUsuarioId(id);
         sintomas.deleteByUsuarioId(id);
         relaciones.deleteByUsuarioId(id);
+        cambios.recordsChanged(id, "all");
     }
 
     private Usuario current(Authentication auth) {

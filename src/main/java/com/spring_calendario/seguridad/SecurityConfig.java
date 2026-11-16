@@ -29,7 +29,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
  * Seguridad de la API:
  * - Contraseñas guardadas con BCrypt.
  * - Sesión con token JWT (header "Authorization: Bearer ...").
- * - Públicas: /api/health y /api/auth/**. Todo lo demás pide sesión iniciada.
+ * - Públicas: /api/health, /api/auth/**, /openapi.yaml y el stream SSE (con ticket).
+ *   Todo lo demás pide sesión iniciada.
  */
 @Configuration
 public class SecurityConfig {
@@ -43,6 +44,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/health", "/api/auth/**", "/error").permitAll()
+                        // El stream SSE se protege con un ticket de un solo uso (ver EventsController).
+                        .requestMatchers(HttpMethod.GET, "/api/events/stream").permitAll()
+                        // Contrato OpenAPI (contract-first): documento público de la API.
+                        .requestMatchers(HttpMethod.GET, "/openapi.yaml", "/docs.html").permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth -> oauth.jwt(Customizer.withDefaults()));
         return http.build();

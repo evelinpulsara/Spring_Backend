@@ -1,6 +1,7 @@
 package com.spring_calendario.registros;
 
 import com.spring_calendario.seguridad.TokenService;
+import com.spring_calendario.tiemporeal.RecordChangePublisher;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -43,12 +44,14 @@ public class RegistrosController {
     private final DiaPeriodoRepository diasPeriodo;
     private final SintomaRepository sintomas;
     private final RelacionRepository relaciones;
+    private final RecordChangePublisher cambios;
 
     public RegistrosController(DiaPeriodoRepository diasPeriodo, SintomaRepository sintomas,
-            RelacionRepository relaciones) {
+            RelacionRepository relaciones, RecordChangePublisher cambios) {
         this.diasPeriodo = diasPeriodo;
         this.sintomas = sintomas;
         this.relaciones = relaciones;
+        this.cambios = cambios;
     }
 
     // ── Días de periodo ──────────────────────────────────────────────────────
@@ -72,13 +75,16 @@ public class RegistrosController {
                 .orElseGet(() -> new DiaPeriodo(id, date, body.flow()));
         dia.setFlujo(body.flow());
         diasPeriodo.save(dia);
+        cambios.recordsChanged(id, "period-days");
         return new PeriodDayDto(date, body.flow());
     }
 
     @DeleteMapping("/period-days/{date}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Transactional
     public void deletePeriodDay(Authentication auth, @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         diasPeriodo.deleteByUsuarioIdAndFecha(user(auth), date);
+        cambios.recordsChanged(user(auth), "period-days");
     }
 
     // ── Síntomas ─────────────────────────────────────────────────────────────
@@ -110,6 +116,7 @@ public class RegistrosController {
         sintomas.deleteByUsuarioIdAndFecha(id, date);
         sintomas.flush();
         items.forEach(i -> sintomas.save(new Sintoma(id, date, i.type(), i.intensity())));
+        cambios.recordsChanged(id, "symptoms");
         return items.stream().map(i -> new SymptomDto(date, i.type(), i.intensity())).toList();
     }
 
@@ -135,13 +142,16 @@ public class RegistrosController {
                 .orElseGet(() -> new Relacion(id, date, body.protection()));
         r.setProteccion(body.protection());
         relaciones.save(r);
+        cambios.recordsChanged(id, "intimacy");
         return new IntimacyDto(date, body.protection());
     }
 
     @DeleteMapping("/intimacy/{date}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Transactional
     public void deleteIntimacy(Authentication auth, @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         relaciones.deleteByUsuarioIdAndFecha(user(auth), date);
+        cambios.recordsChanged(user(auth), "intimacy");
     }
 
     private static UUID user(Authentication auth) {
