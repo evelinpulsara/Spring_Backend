@@ -4,6 +4,9 @@ import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,10 +31,12 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @Configuration
 public class SecurityConfig {
 
+    private static final Set<String> METODOS_SEGUROS = Set.of("GET", "HEAD", "OPTIONS", "TRACE");
+
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) {
         http
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
+                .csrf(csrf -> csrf.requireCsrfProtectionMatcher(SecurityConfig::usaCookies))
                 .cors(Customizer.withDefaults())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
@@ -42,6 +47,12 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth -> oauth.jwt(Customizer.withDefaults()));
         return http.build();
+    }
+
+    static boolean usaCookies(HttpServletRequest request) {
+        boolean cambiaDatos = !METODOS_SEGUROS.contains(request.getMethod());
+        Cookie[] cookies = request.getCookies();
+        return cambiaDatos && cookies != null && cookies.length > 0;
     }
 
     @Bean
