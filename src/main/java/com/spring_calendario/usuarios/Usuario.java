@@ -6,8 +6,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import java.util.function.BiPredicate;
 
-/** Usuaria de la app (tabla "usuarios"). */
 @Entity
 @Table(name = "usuarios")
 public class Usuario {
@@ -60,26 +60,37 @@ public class Usuario {
         this.contrasenaHash = contrasenaHash;
     }
 
+    public void actualizarPerfil(String nombre, int duracionCiclo, int duracionPeriodo,
+            String grupoEdad, String regularidad, boolean cuestionarioCompleto) {
+        this.nombre = nombre.trim();
+        this.duracionCiclo = (short) duracionCiclo;
+        this.duracionPeriodo = (short) duracionPeriodo;
+        this.grupoEdad = grupoEdad;
+        this.regularidad = regularidad;
+        this.cuestionarioCompleto = cuestionarioCompleto;
+    }
+
+    public void configurarNotificaciones(boolean periodo, boolean ventanaFertil, boolean registroDiario) {
+        this.notifPeriodo = periodo;
+        this.notifVentanaFertil = ventanaFertil;
+        this.notifRegistroDiario = registroDiario;
+    }
+
+    public boolean tieneContrasena(String contrasena, BiPredicate<String, String> verificador) {
+        return verificador.test(contrasena, contrasenaHash);
+    }
+
     public UUID getId() { return id; }
     public String getNombre() { return nombre; }
-    public void setNombre(String nombre) { this.nombre = nombre; }
     public String getCorreo() { return correo; }
     public String getContrasenaHash() { return contrasenaHash; }
     public String getGrupoEdad() { return grupoEdad; }
-    public void setGrupoEdad(String grupoEdad) { this.grupoEdad = grupoEdad; }
     public String getRegularidad() { return regularidad; }
-    public void setRegularidad(String regularidad) { this.regularidad = regularidad; }
     public int getDuracionCiclo() { return duracionCiclo; }
-    public void setDuracionCiclo(int dias) { this.duracionCiclo = (short) dias; }
     public int getDuracionPeriodo() { return duracionPeriodo; }
-    public void setDuracionPeriodo(int dias) { this.duracionPeriodo = (short) dias; }
     public boolean isCuestionarioCompleto() { return cuestionarioCompleto; }
-    public void setCuestionarioCompleto(boolean completo) { this.cuestionarioCompleto = completo; }
     public boolean isNotifPeriodo() { return notifPeriodo; }
-    public void setNotifPeriodo(boolean v) { this.notifPeriodo = v; }
     public boolean isNotifVentanaFertil() { return notifVentanaFertil; }
-    public void setNotifVentanaFertil(boolean v) { this.notifVentanaFertil = v; }
     public boolean isNotifRegistroDiario() { return notifRegistroDiario; }
-    public void setNotifRegistroDiario(boolean v) { this.notifRegistroDiario = v; }
     public OffsetDateTime getFechaRegistro() { return fechaRegistro; }
 }

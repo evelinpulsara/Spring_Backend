@@ -15,11 +15,6 @@ import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import org.yaml.snakeyaml.Yaml;
 
-/**
- * Contract-first: el contrato static/openapi.yaml es la fuente única de verdad.
- * Este test falla si el código tiene un endpoint que no está en el contrato,
- * o si el contrato promete un endpoint que el código no tiene.
- */
 @SpringBootTest(properties = {
         "spring.datasource.url=jdbc:h2:mem:contract-test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1",
         "gemini.api-key=",

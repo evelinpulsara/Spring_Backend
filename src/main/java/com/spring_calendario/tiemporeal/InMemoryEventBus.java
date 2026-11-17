@@ -12,23 +12,13 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-/**
- * Bus de eventos en memoria: guarda las conexiones SSE abiertas por usuaria.
- *
- * <p>Estado de conexión: a diferencia de una petición HTTP normal (sin estado),
- * cada conexión SSE ocupa memoria y un descriptor de archivo mientras está
- * abierta (el problema C10K). Por eso hay un límite de conexiones por usuaria
- * y se limpian las conexiones cerradas.
- */
 @Component
 public class InMemoryEventBus implements EventBus {
 
     private static final Logger log = LoggerFactory.getLogger(InMemoryEventBus.class);
 
-    /** Máximo de pestañas/dispositivos conectados por usuaria. */
     static final int MAX_CONNECTIONS_PER_USER = 5;
 
-    /** 30 min; la app se vuelve a conectar sola cuando se cierra. */
     static final long EMITTER_TIMEOUT_MS = 30 * 60 * 1000L;
 
     private final Map<UUID, List<SseEmitter>> connections = new ConcurrentHashMap<>();
@@ -48,14 +38,12 @@ public class InMemoryEventBus implements EventBus {
         emitter.onTimeout(remove);
         emitter.onError(e -> remove.run());
 
-        // Primer mensaje: confirma la conexión y dice cada cuánto reintentar.
         send(userId, emitter, SseEmitter.event().name("connected").data("ok").reconnectTime(5_000));
         return emitter;
     }
 
     @Override
     public void publish(UUID userId, RealtimeEvent event) {
-        // Fan-out: el mismo evento a cada conexión de la usuaria.
         for (SseEmitter emitter : connections.getOrDefault(userId, List.of())) {
             send(userId, emitter, SseEmitter.event().name(event.type()).data(event));
         }
@@ -66,10 +54,6 @@ public class InMemoryEventBus implements EventBus {
         return connections.values().stream().mapToInt(List::size).sum();
     }
 
-    /**
-     * Latido cada 25 s: un comentario SSE que no ve la app pero evita que los
-     * proxies (Render, navegadores) cierren la conexión por inactividad.
-     */
     @Scheduled(fixedRate = 25_000)
     void heartbeat() {
         connections.forEach((userId, list) ->

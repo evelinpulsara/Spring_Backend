@@ -11,14 +11,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import org.springframework.stereotype.Service;
 
-/**
- * Tickets de un solo uso para abrir la conexión SSE.
- *
- * <p>El {@code EventSource} del navegador no puede enviar el header
- * {@code Authorization}. En vez de poner el token JWT en la URL (quedaría en
- * los logs), la app pide con su token un ticket aleatorio que dura 30 segundos
- * y sirve una sola vez.
- */
 @Service
 public class StreamTicketService {
 
@@ -40,7 +32,7 @@ public class StreamTicketService {
 
     public String issue(UUID userId) {
         Instant now = clock.get();
-        tickets.values().removeIf(t -> t.expiresAt().isBefore(now)); // limpieza
+        tickets.values().removeIf(t -> t.expiresAt().isBefore(now));
         byte[] bytes = new byte[24];
         random.nextBytes(bytes);
         String ticket = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
@@ -48,7 +40,6 @@ public class StreamTicketService {
         return ticket;
     }
 
-    /** Devuelve la usuaria del ticket y lo invalida (un solo uso). */
     public Optional<UUID> redeem(String ticket) {
         if (ticket == null) return Optional.empty();
         Ticket t = tickets.remove(ticket);

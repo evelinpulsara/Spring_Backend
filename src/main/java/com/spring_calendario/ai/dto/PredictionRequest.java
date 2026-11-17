@@ -10,19 +10,12 @@ import java.time.LocalDate;
 import com.spring_calendario.ai.dto.InsightRequest.CycleDto;
 import java.util.List;
 
-/**
- * Datos para que la IA prediga el próximo periodo. Sin nombre ni correo.
- *
- * @param profile  respuestas del cuestionario inicial
- * @param cycles   ciclos registrados (inicio, días de sangrado, duración)
- * @param baseline cálculo simple de la app, usado como referencia y respaldo
- */
 public record PredictionRequest(
         @NotNull @Pattern(regexp = "es|en") String language,
         @NotNull LocalDate today,
         @NotNull @Valid ProfileDto profile,
         @NotNull @Size(max = 60) List<@Valid CycleDto> cycles,
-        @NotNull @Valid BaselineDto baseline) {
+        @NotNull @Valid BaselineDto baseline) implements AiRequest {
 
     public record ProfileDto(
             @NotNull @Pattern(regexp = "teen|adult|unknown") String ageGroup,

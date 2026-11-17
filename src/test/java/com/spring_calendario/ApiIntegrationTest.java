@@ -54,7 +54,6 @@ class ApiIntegrationTest {
     void registroInicioDeSesionYPerfil() throws Exception {
         String token = register("Ana@Correo.com");
 
-        // La contraseña se guarda cifrada.
         assertThat(usuarios.findByCorreo("ana@correo.com").orElseThrow().getContrasenaHash())
                 .startsWith("$2").doesNotContain("secreto123");
 
@@ -73,7 +72,6 @@ class ApiIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").isNotEmpty());
 
-        // Cuestionario: después de responderlo queda guardado.
         mvc.perform(put("/api/me").header("Authorization", bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -136,7 +134,6 @@ class ApiIntegrationTest {
         mvc.perform(get("/api/intimacy").header("Authorization", bearer(ana)))
                 .andExpect(jsonPath("$[0].protection").value("none"));
 
-        // Eva no ve nada de Ana.
         mvc.perform(get("/api/period-days").header("Authorization", bearer(eva)))
                 .andExpect(jsonPath("$.length()").value(0));
         mvc.perform(get("/api/intimacy").header("Authorization", bearer(eva)))
@@ -150,6 +147,16 @@ class ApiIntegrationTest {
                 .andExpect(jsonPath("$.length()").value(0));
         mvc.perform(get("/api/symptoms").header("Authorization", bearer(ana)))
                 .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void noAceptaSintomasRepetidosEnElMismoDia() throws Exception {
+        String ana = register("ana3@correo.com");
+        mvc.perform(put("/api/symptoms/2026-10-22").header("Authorization", bearer(ana))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[{\"type\":\"cramps\",\"intensity\":3},{\"type\":\"cramps\",\"intensity\":4}]"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("duplicate_symptom"));
     }
 
     @Test

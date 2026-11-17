@@ -19,11 +19,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Crea la cuenta de prueba demo@spring.app (contraseña Spring1234) con unos
- * meses de datos de ejemplo, solo si todavía no existe.
- * Se desactiva con DEMO_ENABLED=false.
- */
 @Component
 @ConditionalOnProperty(name = "app.demo.enabled", havingValue = "true")
 public class DemoDataSeeder implements ApplicationRunner {
@@ -33,9 +28,7 @@ public class DemoDataSeeder implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DemoDataSeeder.class);
 
-    /** Duración de cada ciclo pasado, del más nuevo al más viejo. */
     private static final int[] CYCLE_LENGTHS = {28, 29, 27, 30, 28};
-    /** Días de sangrado de cada ciclo, del más nuevo al más viejo. */
     private static final int[] PERIOD_DAYS = {5, 5, 4, 5, 6, 5};
 
     private final UsuarioRepository usuarios;
@@ -56,7 +49,6 @@ public class DemoDataSeeder implements ApplicationRunner {
     public void run(ApplicationArguments args) {
         if (usuarios.existsByCorreo(DEMO_EMAIL)) return;
 
-        // Como usuaria nueva: el cuestionario del ciclo aún no está respondido.
         Usuario demo = usuarios.save(new Usuario("Luna", DEMO_EMAIL, passwordEncoder.encode(DEMO_PASSWORD)));
         UUID id = demo.getId();
         LocalDate today = LocalDate.now();

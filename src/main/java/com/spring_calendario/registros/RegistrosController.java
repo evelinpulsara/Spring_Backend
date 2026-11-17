@@ -1,22 +1,20 @@
 package com.spring_calendario.registros;
 
+import com.spring_calendario.registros.dto.RegistroDtos.IntimacyBody;
+import com.spring_calendario.registros.dto.RegistroDtos.IntimacyDto;
+import com.spring_calendario.registros.dto.RegistroDtos.PeriodDayBody;
+import com.spring_calendario.registros.dto.RegistroDtos.PeriodDayDto;
+import com.spring_calendario.registros.dto.RegistroDtos.SymptomDto;
+import com.spring_calendario.registros.dto.RegistroDtos.SymptomItem;
 import com.spring_calendario.seguridad.TokenService;
-import com.spring_calendario.tiemporeal.RecordChangePublisher;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.format.annotation.DateTimeFormat.ISO;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,136 +23,62 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
-/**
- * Registros de la usuaria con sesión iniciada. Cada usuaria solo ve y cambia
- * sus propios datos (el id sale del token, nunca de la petición).
- *
- * <pre>
- * GET    /api/period-days            PUT /api/period-days/{fecha}   DELETE /api/period-days/{fecha}
- * GET    /api/symptoms               PUT /api/symptoms/{fecha}  (reemplaza los síntomas del día)
- * GET    /api/intimacy               PUT /api/intimacy/{fecha}      DELETE /api/intimacy/{fecha}
- * </pre>
- */
 @RestController
 @RequestMapping("/api")
 public class RegistrosController {
 
-    private final DiaPeriodoRepository diasPeriodo;
-    private final SintomaRepository sintomas;
-    private final RelacionRepository relaciones;
-    private final RecordChangePublisher cambios;
+    private final RegistrosService registros;
 
-    public RegistrosController(DiaPeriodoRepository diasPeriodo, SintomaRepository sintomas,
-            RelacionRepository relaciones, RecordChangePublisher cambios) {
-        this.diasPeriodo = diasPeriodo;
-        this.sintomas = sintomas;
-        this.relaciones = relaciones;
-        this.cambios = cambios;
+    public RegistrosController(RegistrosService registros) {
+        this.registros = registros;
     }
-
-    // ── Días de periodo ──────────────────────────────────────────────────────
-
-    public record PeriodDayDto(LocalDate date, String flow) {}
-
-    public record PeriodDayBody(@NotNull @Pattern(regexp = "none|light|medium|heavy") String flow) {}
 
     @GetMapping("/period-days")
     public List<PeriodDayDto> periodDays(Authentication auth) {
-        return diasPeriodo.findByUsuarioIdOrderByFechaAsc(user(auth)).stream()
-                .map(d -> new PeriodDayDto(d.getFecha(), d.getFlujo())).toList();
+        return registros.diasDePeriodo(TokenService.userId(auth));
     }
 
     @PutMapping("/period-days/{date}")
-    @Transactional
-    public PeriodDayDto savePeriodDay(Authentication auth, @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+    public PeriodDayDto savePeriodDay(Authentication auth,
+            @PathVariable @DateTimeFormat(iso = ISO.DATE) LocalDate date,
             @Valid @RequestBody PeriodDayBody body) {
-        UUID id = user(auth);
-        DiaPeriodo dia = diasPeriodo.findByUsuarioIdAndFecha(id, date)
-                .orElseGet(() -> new DiaPeriodo(id, date, body.flow()));
-        dia.setFlujo(body.flow());
-        diasPeriodo.save(dia);
-        cambios.recordsChanged(id, "period-days");
-        return new PeriodDayDto(date, body.flow());
+        return registros.guardarDiaDePeriodo(TokenService.userId(auth), date, body.flow());
     }
 
     @DeleteMapping("/period-days/{date}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Transactional
-    public void deletePeriodDay(Authentication auth, @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        diasPeriodo.deleteByUsuarioIdAndFecha(user(auth), date);
-        cambios.recordsChanged(user(auth), "period-days");
+    public void deletePeriodDay(Authentication auth, @PathVariable @DateTimeFormat(iso = ISO.DATE) LocalDate date) {
+        registros.borrarDiaDePeriodo(TokenService.userId(auth), date);
     }
-
-    // ── Síntomas ─────────────────────────────────────────────────────────────
-
-    public record SymptomDto(LocalDate date, String type, int intensity) {}
-
-    public record SymptomItem(
-            @NotNull @Pattern(regexp = "cramps|headache|mood|bloating|acne|fatigue|appetite|sleep") String type,
-            @Min(1) @Max(5) int intensity) {}
 
     @GetMapping("/symptoms")
     public List<SymptomDto> symptoms(Authentication auth) {
-        return sintomas.findByUsuarioIdOrderByFechaAsc(user(auth)).stream()
-                .map(s -> new SymptomDto(s.getFecha(), s.getTipo(), s.getIntensidad())).toList();
+        return registros.sintomas(TokenService.userId(auth));
     }
 
-    /** Reemplaza todos los síntomas de ese día (lista vacía = borrarlos). */
     @PutMapping("/symptoms/{date}")
-    @Transactional
-    public List<SymptomDto> saveSymptoms(Authentication auth, @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+    public List<SymptomDto> saveSymptoms(Authentication auth,
+            @PathVariable @DateTimeFormat(iso = ISO.DATE) LocalDate date,
             @RequestBody @Size(max = 8) List<@Valid SymptomItem> items) {
-        UUID id = user(auth);
-        Set<String> types = new HashSet<>();
-        for (SymptomItem item : items) {
-            if (!types.add(item.type())) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Síntoma repetido");
-            }
-        }
-        sintomas.deleteByUsuarioIdAndFecha(id, date);
-        sintomas.flush();
-        items.forEach(i -> sintomas.save(new Sintoma(id, date, i.type(), i.intensity())));
-        cambios.recordsChanged(id, "symptoms");
-        return items.stream().map(i -> new SymptomDto(date, i.type(), i.intensity())).toList();
+        return registros.reemplazarSintomas(TokenService.userId(auth), date, items);
     }
-
-    // ── Relaciones ───────────────────────────────────────────────────────────
-
-    public record IntimacyDto(LocalDate date, String protection) {}
-
-    public record IntimacyBody(
-            @NotNull @Pattern(regexp = "none|condom|contraceptive|unsure") String protection) {}
 
     @GetMapping("/intimacy")
     public List<IntimacyDto> intimacy(Authentication auth) {
-        return relaciones.findByUsuarioIdOrderByFechaAsc(user(auth)).stream()
-                .map(r -> new IntimacyDto(r.getFecha(), r.getProteccion())).toList();
+        return registros.relaciones(TokenService.userId(auth));
     }
 
     @PutMapping("/intimacy/{date}")
-    @Transactional
-    public IntimacyDto saveIntimacy(Authentication auth, @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+    public IntimacyDto saveIntimacy(Authentication auth,
+            @PathVariable @DateTimeFormat(iso = ISO.DATE) LocalDate date,
             @Valid @RequestBody IntimacyBody body) {
-        UUID id = user(auth);
-        Relacion r = relaciones.findByUsuarioIdAndFecha(id, date)
-                .orElseGet(() -> new Relacion(id, date, body.protection()));
-        r.setProteccion(body.protection());
-        relaciones.save(r);
-        cambios.recordsChanged(id, "intimacy");
-        return new IntimacyDto(date, body.protection());
+        return registros.guardarRelacion(TokenService.userId(auth), date, body.protection());
     }
 
     @DeleteMapping("/intimacy/{date}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Transactional
-    public void deleteIntimacy(Authentication auth, @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        relaciones.deleteByUsuarioIdAndFecha(user(auth), date);
-        cambios.recordsChanged(user(auth), "intimacy");
-    }
-
-    private static UUID user(Authentication auth) {
-        return TokenService.userId(auth);
+    public void deleteIntimacy(Authentication auth, @PathVariable @DateTimeFormat(iso = ISO.DATE) LocalDate date) {
+        registros.borrarRelacion(TokenService.userId(auth), date);
     }
 }

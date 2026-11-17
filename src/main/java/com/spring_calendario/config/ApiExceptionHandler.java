@@ -13,7 +13,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-/** Convierte los errores en respuestas JSON claras, sin detalles internos. */
 @RestControllerAdvice
 public class ApiExceptionHandler {
 

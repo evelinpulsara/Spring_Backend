@@ -10,18 +10,13 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.List;
 
-/**
- * Datos que envía la app para pedir un consejo. No incluye nombre ni correo:
- * solo síntomas, ciclos, relaciones registradas y la predicción actual.
- */
 public record InsightRequest(
         @NotNull @Pattern(regexp = "es|en") String language,
         @NotNull @Size(max = 500) List<@Valid SymptomDto> symptoms,
         @NotNull @Size(max = 60) List<@Valid CycleDto> cycles,
         @Valid PredictionDto prediction,
-        @Size(max = 200) List<@Valid IntimacyDto> intimacy) {
+        @Size(max = 200) List<@Valid IntimacyDto> intimacy) implements AiRequest {
 
-    /** Relaciones registradas; si la app no las envía, lista vacía. */
     public List<IntimacyDto> intimacyOrEmpty() {
         return intimacy == null ? List.of() : intimacy;
     }
@@ -36,10 +31,6 @@ public record InsightRequest(
             @Min(1) @Max(30) int periodLength,
             @Min(1) @Max(120) Integer cycleLength) {}
 
-    /**
-     * Relación sexual registrada, con el riesgo que ya calculó la app
-     * según la ventana fértil estimada.
-     */
     public record IntimacyDto(
             @NotNull LocalDate date,
             @NotNull @Pattern(regexp = "none|condom|contraceptive|unsure") String protection,

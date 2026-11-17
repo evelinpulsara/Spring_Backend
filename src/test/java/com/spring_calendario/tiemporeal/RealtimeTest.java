@@ -68,13 +68,11 @@ class RealtimeTest {
                         .contentType(MediaType.APPLICATION_JSON).content("{\"flow\":\"heavy\"}"))
                 .andExpect(status().isOk());
 
-        // Fan-out: las dos conexiones de Ana reciben el evento...
         assertThat(celular.getContentAsString())
                 .contains("event:connected")
                 .contains("event:records-changed")
                 .contains("\"resource\":\"period-days\"");
         assertThat(computadora.getContentAsString()).contains("event:records-changed");
-        // ...y la otra usuaria no.
         assertThat(otra.getContentAsString()).doesNotContain("records-changed");
     }
 
@@ -93,7 +91,6 @@ class RealtimeTest {
         assertThat(tickets.redeem(t)).contains(id);
         assertThat(tickets.redeem(t)).isEmpty();
 
-        // Con un reloj que se adelanta 31 segundos, el ticket ya venció.
         Instant[] ahora = {Instant.parse("2026-01-01T00:00:00Z")};
         var conReloj = new StreamTicketService(() -> ahora[0]);
         String viejo = conReloj.issue(id);

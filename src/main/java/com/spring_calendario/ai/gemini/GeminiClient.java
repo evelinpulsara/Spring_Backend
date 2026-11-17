@@ -14,10 +14,6 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
 
-/**
- * Llama a la API de Gemini (generateContent) usando la clave guardada en el backend.
- * La clave nunca se envía a la app Flutter.
- */
 @Component
 public class GeminiClient implements AiTextGenerator {
 
@@ -87,12 +83,10 @@ public class GeminiClient implements AiTextGenerator {
         throw new AiUnavailableException("No se pudo contactar a Gemini.", lastError);
     }
 
-    /** Errores temporales o de modelo no disponible: vale la pena probar otro modelo. */
     private static boolean isRetryable(int status) {
         return status == 404 || status == 408 || status == 429 || status >= 500;
     }
 
-    /** Solo los campos de la respuesta de Gemini que usamos. */
     record GeminiResponse(List<Candidate> candidates) {
         String firstText() {
             if (candidates == null) return null;

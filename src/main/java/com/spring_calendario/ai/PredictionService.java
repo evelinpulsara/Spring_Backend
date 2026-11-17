@@ -2,6 +2,7 @@ package com.spring_calendario.ai;
 
 import com.spring_calendario.ai.dto.InsightRequest.CycleDto;
 import com.spring_calendario.ai.dto.PredictionRequest;
+import com.spring_calendario.ai.dto.PredictionRequest.BaselineDto;
 import com.spring_calendario.ai.dto.PredictionResponse;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -11,24 +12,24 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import org.springframework.stereotype.Service;
-import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
-/**
- * Pide a la IA la predicción del próximo periodo y la valida: si la IA da
- * fechas poco realistas, se corrigen usando el cálculo de la app como referencia.
- */
 @Service
-public class PredictionService {
-
-    /** Máximo que la IA puede alejarse del cálculo de referencia. */
+public class PredictionService
+        extends AiJsonService<PredictionRequest, PredictionService.RawPrediction, PredictionResponse> {
     static final int MAX_DAYS_FROM_BASELINE = 10;
-    /** Máximo de días entre el día probable y los extremos de la ventana. */
     static final int MAX_WINDOW_SIDE = 4;
     static final int LUTEAL_DAYS = 14;
+    static final int MIN_PERIOD = 2;
+    static final int MAX_PERIOD = 10;
 
-    static final Map<String, Object> RESPONSE_SCHEMA = Map.of(
+    private static final List<String> CONFIDENCE_LEVELS = List.of("low", "medium", "high");
+    private static final Set<String> CONFIDENCE = Set.copyOf(CONFIDENCE_LEVELS);
+    private static final String DEFAULT_CONFIDENCE = "medium";
+
+    private static final Map<String, Object> RESPONSE_SCHEMA = Map.of(
             "type", "object",
             "properties", Map.of(
                     "earliestStart", Map.of("type", "string", "description", "YYYY-MM-DD"),
@@ -36,31 +37,26 @@ public class PredictionService {
                     "latestStart", Map.of("type", "string", "description", "YYYY-MM-DD"),
                     "periodLength", Map.of("type", "integer"),
                     "ovulationDate", Map.of("type", "string", "description", "YYYY-MM-DD"),
-                    "confidence", Map.of("type", "string", "enum", List.of("low", "medium", "high")),
+                    "confidence", Map.of("type", "string", "enum", CONFIDENCE_LEVELS),
                     "explanation", Map.of("type", "string")),
             "required", List.of("earliestStart", "likelyStart", "latestStart", "periodLength",
                     "ovulationDate", "confidence", "explanation"));
 
-    private static final Set<String> CONFIDENCE = Set.of("low", "medium", "high");
-
-    private final AiTextGenerator generator;
-    private final ObjectMapper objectMapper;
-
     public PredictionService(AiTextGenerator generator, ObjectMapper objectMapper) {
-        this.generator = generator;
-        this.objectMapper = objectMapper;
+        super(generator, objectMapper, RawPrediction.class);
     }
 
     public PredictionResponse predict(PredictionRequest request) {
-        boolean spanish = "es".equals(request.language());
-        AiTextGenerator.GeneratedText generated =
-                generator.generateJson(systemInstruction(spanish), userPrompt(request), RESPONSE_SCHEMA);
-        AiPrediction raw = parse(generated.text());
-        return sanitize(raw, request, generated.model());
+        return execute(request);
     }
 
-    String systemInstruction(boolean spanish) {
-        String language = spanish ? "español neutro" : "English";
+    @Override
+    protected Map<String, Object> responseSchema() {
+        return RESPONSE_SCHEMA;
+    }
+
+    @Override
+    protected String systemInstruction(boolean spanish) {
         return """
                 Eres el motor de predicción del ciclo menstrual de la app "Spring" (proyecto académico).
                 Tu tarea: predecir cuándo empezará el PRÓXIMO periodo, cuántos días durará y la ovulación.
@@ -80,121 +76,117 @@ public class PredictionService {
                 Recuerda que es una estimación. Sin diagnósticos médicos.
                 - Las fechas DEBEN ser posteriores al último inicio registrado y en formato YYYY-MM-DD.
                 Devuelve solo JSON con los campos pedidos.
-                """.formatted(language);
+                """.formatted(languageName(spanish));
     }
 
-    String userPrompt(PredictionRequest request) {
-        var p = request.profile();
-        var b = request.baseline();
-        StringBuilder sb = new StringBuilder();
-        sb.append("Hoy: ").append(request.today()).append('\n');
-        sb.append("Idioma: ").append(request.language()).append("\n\n");
-        sb.append("PERFIL (cuestionario):\n");
-        sb.append("- Grupo de edad: ").append(p.ageGroup()).append('\n');
-        sb.append("- Regularidad: ").append(p.regularity()).append('\n');
-        sb.append("- Duración típica del periodo: ").append(p.typicalPeriodLength()).append(" días\n");
-        sb.append("- Duración típica del ciclo: ").append(p.typicalCycleLength()).append(" días\n");
-
-        sb.append("\nCICLOS REGISTRADOS (inicio, días de sangrado, duración del ciclo):\n");
-        List<CycleDto> cycles = request.cycles().stream()
-                .sorted(Comparator.comparing(CycleDto::startDate)).toList();
-        if (cycles.isEmpty()) {
-            sb.append("- Ninguno\n");
-        } else {
-            cycles.forEach(c -> sb.append("- ").append(c.startDate())
-                    .append(", ").append(c.periodLength()).append(" días, ")
-                    .append(c.cycleLength() == null ? "en curso" : c.cycleLength() + " días")
-                    .append('\n'));
-        }
-        sb.append("\nCÁLCULO SIMPLE DE REFERENCIA (promedios): próximo inicio ").append(b.nextStart())
-                .append(", duración ").append(b.periodLength()).append(" días, ovulación ")
-                .append(b.ovulation()).append('\n');
-        return sb.toString();
-    }
-
-    /** Corrige valores poco realistas usando el cálculo de referencia. */
-    PredictionResponse sanitize(AiPrediction ai, PredictionRequest request, String model) {
+    @Override
+    protected String userPrompt(PredictionRequest request) {
+        var profile = request.profile();
         var baseline = request.baseline();
-        boolean adjusted = false;
+        return new PromptBuilder()
+                .line("Hoy: ", request.today())
+                .line("Idioma: ", request.language())
+                .section("PERFIL (cuestionario)")
+                .item("Grupo de edad: ", profile.ageGroup())
+                .item("Regularidad: ", profile.regularity())
+                .item("Duración típica del periodo: ", profile.typicalPeriodLength(), " días")
+                .item("Duración típica del ciclo: ", profile.typicalCycleLength(), " días")
+                .section("CICLOS REGISTRADOS (inicio, días de sangrado, duración del ciclo)")
+                .items(request.cycles().stream().sorted(Comparator.comparing(CycleDto::startDate)).toList(),
+                        "Ninguno", PromptBuilder::cycle)
+                .section("CÁLCULO SIMPLE DE REFERENCIA (promedios)")
+                .item("próximo inicio ", baseline.nextStart(), ", duración ", baseline.periodLength(),
+                        " días, ovulación ", baseline.ovulation())
+                .build();
+    }
 
-        LocalDate lastStart = request.cycles().stream()
-                .map(CycleDto::startDate).max(Comparator.naturalOrder()).orElse(null);
-        LocalDate minStart = lastStart == null ? request.today().minusDays(60) : lastStart.plusDays(15);
+    @Override
+    protected PredictionResponse toResponse(RawPrediction raw, PredictionRequest request, String model) {
+        return sanitize(raw.toPrediction(), request, model);
+    }
 
-        LocalDate likely = ai.likely();
-        if (likely == null
-                || Math.abs(ChronoUnit.DAYS.between(baseline.nextStart(), likely)) > MAX_DAYS_FROM_BASELINE
-                || likely.isBefore(minStart)) {
-            likely = baseline.nextStart();
-            adjusted = true;
-        }
+    PredictionResponse sanitize(AiPrediction ai, PredictionRequest request, String model) {
+        BaselineDto baseline = request.baseline();
+        Corrections corrections = new Corrections();
+        LocalDate minStart = minimumStart(request);
 
-        LocalDate earliest = ai.earliest();
-        if (earliest == null || earliest.isAfter(likely)
-                || ChronoUnit.DAYS.between(earliest, likely) > MAX_WINDOW_SIDE) {
-            earliest = likely.minusDays(1);
-            adjusted = true;
-        }
-        LocalDate latest = ai.latest();
-        if (latest == null || latest.isBefore(likely)
-                || ChronoUnit.DAYS.between(likely, latest) > MAX_WINDOW_SIDE) {
-            latest = likely.plusDays(1);
-            adjusted = true;
-        }
+        LocalDate likely = corrections.keepIf(ai.likely(),
+                d -> daysBetween(baseline.nextStart(), d) <= MAX_DAYS_FROM_BASELINE && !d.isBefore(minStart),
+                baseline.nextStart());
+        LocalDate earliest = corrections.keepIf(ai.earliest(),
+                d -> !d.isAfter(likely) && ChronoUnit.DAYS.between(d, likely) <= MAX_WINDOW_SIDE,
+                likely.minusDays(1));
+        LocalDate latest = corrections.keepIf(ai.latest(),
+                d -> !d.isBefore(likely) && ChronoUnit.DAYS.between(likely, d) <= MAX_WINDOW_SIDE,
+                likely.plusDays(1));
+        int periodLength = corrections.keepIf(
+                ai.periodLength() == null ? baseline.periodLength() : ai.periodLength(),
+                n -> n >= MIN_PERIOD && n <= MAX_PERIOD,
+                Math.clamp(baseline.periodLength(), MIN_PERIOD, MAX_PERIOD));
+        LocalDate ovulation = corrections.keepIf(ai.ovulation(),
+                d -> isLutealPhase(ChronoUnit.DAYS.between(d, likely)),
+                likely.minusDays(LUTEAL_DAYS));
 
-        int periodLength = ai.periodLength() == null ? baseline.periodLength() : ai.periodLength();
-        if (periodLength < 2 || periodLength > 10) {
-            periodLength = Math.max(2, Math.min(10, baseline.periodLength()));
-            adjusted = true;
-        }
-
-        LocalDate ovulation = ai.ovulation();
-        if (ovulation == null) {
-            ovulation = likely.minusDays(LUTEAL_DAYS);
-            adjusted = true;
-        } else {
-            long daysBefore = ChronoUnit.DAYS.between(ovulation, likely);
-            if (daysBefore < 10 || daysBefore > 17) {
-                ovulation = likely.minusDays(LUTEAL_DAYS);
-                adjusted = true;
-            }
-        }
-
-        String confidence = ai.confidence() != null && CONFIDENCE.contains(ai.confidence())
-                ? ai.confidence() : "medium";
+        String confidence = ai.confidence() != null && CONFIDENCE.contains(ai.confidence()) ? ai.confidence() : DEFAULT_CONFIDENCE;
         String explanation = ai.explanation() == null ? "" : ai.explanation().trim();
 
         return new PredictionResponse(
                 earliest, likely, latest, periodLength, ovulation,
                 ovulation.minusDays(5), ovulation.plusDays(1),
-                confidence, explanation, model, adjusted, Instant.now());
+                confidence, explanation, model, corrections.applied(), Instant.now());
     }
 
-    AiPrediction parse(String raw) {
-        String json = raw.strip();
-        if (json.startsWith("```")) {
-            json = json.replaceFirst("^```(?:json)?\\s*", "").replaceFirst("\\s*```$", "");
-        }
-        try {
-            RawPrediction r = objectMapper.readValue(json, RawPrediction.class);
-            return new AiPrediction(date(r.earliestStart()), date(r.likelyStart()), date(r.latestStart()),
-                    r.periodLength(), date(r.ovulationDate()), r.confidence(), r.explanation());
-        } catch (JacksonException e) {
-            throw new AiUnavailableException("La IA devolvió un formato no válido.", e);
-        }
+    private static LocalDate minimumStart(PredictionRequest request) {
+        return request.cycles().stream()
+                .map(CycleDto::startDate)
+                .max(Comparator.naturalOrder())
+                .map(last -> last.plusDays(15))
+                .orElse(request.today().minusDays(60));
     }
 
-    private static LocalDate date(String value) {
-        if (value == null) return null;
-        try {
-            return LocalDate.parse(value.strip());
-        } catch (DateTimeParseException e) {
-            return null;
+    private static long daysBetween(LocalDate a, LocalDate b) {
+        return Math.abs(ChronoUnit.DAYS.between(a, b));
+    }
+
+    private static boolean isLutealPhase(long daysBeforePeriod) {
+        return daysBeforePeriod >= 10 && daysBeforePeriod <= 17;
+    }
+
+    private static final class Corrections {
+
+        private boolean applied;
+
+        <T> T keepIf(T value, Predicate<T> isValid, T fallback) {
+            if (value != null && isValid.test(value)) {
+                return value;
+            }
+            applied = true;
+            return fallback;
+        }
+
+        boolean applied() {
+            return applied;
         }
     }
 
     record RawPrediction(String earliestStart, String likelyStart, String latestStart,
-            Integer periodLength, String ovulationDate, String confidence, String explanation) {}
+            Integer periodLength, String ovulationDate, String confidence, String explanation) {
+        AiPrediction toPrediction() {
+            return new AiPrediction(date(earliestStart), date(likelyStart), date(latestStart),
+                    periodLength, date(ovulationDate), confidence, explanation);
+        }
+
+        private static LocalDate date(String value) {
+            if (value == null) {
+                return null;
+            }
+            try {
+                return LocalDate.parse(value.strip());
+            } catch (DateTimeParseException e) {
+                return null;
+            }
+        }
+    }
 
     record AiPrediction(LocalDate earliest, LocalDate likely, LocalDate latest,
             Integer periodLength, LocalDate ovulation, String confidence, String explanation) {}

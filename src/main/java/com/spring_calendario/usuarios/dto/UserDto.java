@@ -2,7 +2,6 @@ package com.spring_calendario.usuarios.dto;
 
 import com.spring_calendario.usuarios.Usuario;
 
-/** Datos de la usuaria que ve la app (nunca incluye la contraseña). */
 public record UserDto(
         String id,
         String name,
@@ -13,7 +12,6 @@ public record UserDto(
         String regularity,
         boolean cycleSetupCompleted,
         Notifications notifications) {
-
     public record Notifications(boolean periodReminders, boolean fertileWindowAlerts, boolean dailyLogReminder) {}
 
     public static UserDto from(Usuario u) {

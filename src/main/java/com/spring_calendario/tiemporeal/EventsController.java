@@ -14,20 +14,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-/**
- * Tiempo real con Server-Sent Events (SSE).
- *
- * <p>Se eligió SSE y no WebSockets porque la comunicación es de una sola vía
- * (servidor → app): la app guarda con REST normal y solo necesita enterarse de
- * los cambios. SSE funciona sobre HTTP normal, se reconecta solo y no necesita
- * el "Upgrade" a TCP de WebSockets. Comparado con <i>polling</i>, no hace
- * peticiones cada X segundos sin que haya cambios.
- *
- * <pre>
- * POST /api/events/ticket          (con token)  → { "ticket": "..." }
- * GET  /api/events/stream?ticket=  (público)    → text/event-stream
- * </pre>
- */
 @RestController
 @RequestMapping("/api/events")
 public class EventsController {

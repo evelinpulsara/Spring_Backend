@@ -12,7 +12,6 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
 
-/** Crea los tokens de sesión y lee qué usuaria hizo la petición. */
 @Service
 public class TokenService {
 
@@ -36,7 +35,6 @@ public class TokenService {
         return encoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
     }
 
-    /** Id de la usuaria dueña del token de la petición actual. */
     public static UUID userId(Authentication authentication) {
         return UUID.fromString(authentication.getName());
     }

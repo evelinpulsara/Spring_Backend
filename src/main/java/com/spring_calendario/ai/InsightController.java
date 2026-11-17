@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Endpoints de IA: consejos (POST /api/ai/insight) y predicción (POST /api/ai/prediction). */
 @RestController
 @RequestMapping("/api/ai")
 public class InsightController {
@@ -28,7 +27,6 @@ public class InsightController {
         return insightService.generate(request);
     }
 
-    /** Predicción del próximo periodo con IA: POST /api/ai/prediction */
     @PostMapping("/prediction")
     public PredictionResponse prediction(@Valid @RequestBody PredictionRequest request) {
         return predictionService.predict(request);

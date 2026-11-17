@@ -28,7 +28,6 @@ class PredictionServiceTest {
         return new PredictionService(fake, JsonMapper.builder().build());
     }
 
-    /** Ejemplo real: periodo el 22 de octubre de 2026, ciclos de ~29 días. */
     private static PredictionRequest request() {
         return new PredictionRequest(
                 "es",
@@ -79,7 +78,7 @@ class PredictionServiceTest {
                  "periodLength":20,"ovulationDate":"2027-01-01","confidence":"rarísima","explanation":"x"}""")
                 .predict(request());
 
-        assertThat(r.likelyStart()).isEqualTo(LocalDate.of(2026, 11, 20)); // referencia
+        assertThat(r.likelyStart()).isEqualTo(LocalDate.of(2026, 11, 20));
         assertThat(r.earliestStart()).isEqualTo(LocalDate.of(2026, 11, 19));
         assertThat(r.latestStart()).isEqualTo(LocalDate.of(2026, 11, 21));
         assertThat(r.periodLength()).isEqualTo(5);
