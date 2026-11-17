@@ -54,6 +54,13 @@ public abstract class AiJsonService<Q extends AiRequest, R, S> {
         if (!json.startsWith(CODE_FENCE)) {
             return json;
         }
-        return json.replaceFirst("^```(?:json)?\\s*", "").replaceFirst("\\s*```$", "");
+        String body = json.substring(CODE_FENCE.length());
+        if (body.startsWith("json")) {
+            body = body.substring("json".length());
+        }
+        if (body.endsWith(CODE_FENCE)) {
+            body = body.substring(0, body.length() - CODE_FENCE.length());
+        }
+        return body.strip();
     }
 }

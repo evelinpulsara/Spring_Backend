@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -20,6 +21,7 @@ public class StreamTicketService {
     private final Map<String, Ticket> tickets = new ConcurrentHashMap<>();
     private final Supplier<Instant> clock;
 
+    @Autowired
     public StreamTicketService() {
         this(Instant::now);
     }

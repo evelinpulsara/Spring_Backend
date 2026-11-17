@@ -7,11 +7,13 @@ import com.spring_calendario.registros.SintomaRepository;
 import com.spring_calendario.usuarios.Usuario;
 import com.spring_calendario.usuarios.UsuarioRepository;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -24,8 +26,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class DemoDataSeeder implements ApplicationRunner {
 
     public static final String DEMO_EMAIL = "demo@spring.app";
-    public static final String DEMO_PASSWORD = "Spring1234";
 
+    private static final ZoneId ZONA = ZoneId.of("America/Bogota");
     private static final Logger log = LoggerFactory.getLogger(DemoDataSeeder.class);
 
     private static final int[] CYCLE_LENGTHS = {28, 29, 27, 30, 28};
@@ -35,13 +37,16 @@ public class DemoDataSeeder implements ApplicationRunner {
     private final DiaPeriodoRepository diasPeriodo;
     private final SintomaRepository sintomas;
     private final PasswordEncoder passwordEncoder;
+    private final String claveDemo;
 
     public DemoDataSeeder(UsuarioRepository usuarios, DiaPeriodoRepository diasPeriodo,
-            SintomaRepository sintomas, PasswordEncoder passwordEncoder) {
+            SintomaRepository sintomas, PasswordEncoder passwordEncoder,
+            @Value("${app.demo.clave}") String claveDemo) {
         this.usuarios = usuarios;
         this.diasPeriodo = diasPeriodo;
         this.sintomas = sintomas;
         this.passwordEncoder = passwordEncoder;
+        this.claveDemo = claveDemo;
     }
 
     @Override
@@ -49,9 +54,9 @@ public class DemoDataSeeder implements ApplicationRunner {
     public void run(ApplicationArguments args) {
         if (usuarios.existsByCorreo(DEMO_EMAIL)) return;
 
-        Usuario demo = usuarios.save(new Usuario("Luna", DEMO_EMAIL, passwordEncoder.encode(DEMO_PASSWORD)));
+        Usuario demo = usuarios.save(new Usuario("Luna", DEMO_EMAIL, passwordEncoder.encode(claveDemo)));
         UUID id = demo.getId();
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(ZONA);
 
         List<LocalDate> starts = new ArrayList<>();
         LocalDate start = today.minusDays(9);

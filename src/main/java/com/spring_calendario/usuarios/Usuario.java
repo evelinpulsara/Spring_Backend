@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 import java.util.function.BiPredicate;
 
@@ -49,7 +50,7 @@ public class Usuario {
     private boolean notifRegistroDiario = true;
 
     @Column(name = "fecha_registro", nullable = false)
-    private OffsetDateTime fechaRegistro = OffsetDateTime.now();
+    private OffsetDateTime fechaRegistro = OffsetDateTime.now(ZoneOffset.UTC);
 
     protected Usuario() {}
 

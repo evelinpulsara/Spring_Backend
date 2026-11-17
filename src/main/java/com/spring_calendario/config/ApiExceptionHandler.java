@@ -16,21 +16,23 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class ApiExceptionHandler {
 
+    private static final String ERROR = "error";
+
     @ExceptionHandler(AiUnavailableException.class)
     public ResponseEntity<Map<String, String>> aiUnavailable(AiUnavailableException e) {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                .body(Map.of("error", e.getMessage()));
+                .body(Map.of(ERROR, e.getMessage()));
     }
 
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<Map<String, String>> api(ApiException e) {
-        return ResponseEntity.status(e.status()).body(Map.of("error", e.code()));
+        return ResponseEntity.status(e.status()).body(Map.of(ERROR, e.code()));
     }
 
     @ExceptionHandler({MethodArgumentNotValidException.class, HttpMessageNotReadableException.class,
             HandlerMethodValidationException.class, ConstraintViolationException.class,
             MethodArgumentTypeMismatchException.class})
     public ResponseEntity<Map<String, String>> badRequest(Exception e) {
-        return ResponseEntity.badRequest().body(Map.of("error", "Datos de la solicitud no válidos."));
+        return ResponseEntity.badRequest().body(Map.of(ERROR, "Datos de la solicitud no válidos."));
     }
 }

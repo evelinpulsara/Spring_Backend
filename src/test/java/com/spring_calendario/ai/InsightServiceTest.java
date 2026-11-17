@@ -84,14 +84,16 @@ class InsightServiceTest {
     @Test
     void fallaConRespuestaInvalida() {
         InsightService service = serviceReturning("esto no es json");
-        assertThatThrownBy(() -> service.generate(sampleRequest("es")))
+        InsightRequest request = sampleRequest("es");
+        assertThatThrownBy(() -> service.generate(request))
                 .isInstanceOf(AiUnavailableException.class);
     }
 
     @Test
     void fallaSiFaltaElMensaje() {
         InsightService service = serviceReturning("{\"title\":\"Hola\"}");
-        assertThatThrownBy(() -> service.generate(sampleRequest("es")))
+        InsightRequest request = sampleRequest("es");
+        assertThatThrownBy(() -> service.generate(request))
                 .isInstanceOf(AiUnavailableException.class);
     }
 

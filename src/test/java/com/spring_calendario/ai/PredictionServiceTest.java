@@ -99,7 +99,9 @@ class PredictionServiceTest {
 
     @Test
     void fallaSiNoEsJson() {
-        assertThatThrownBy(() -> serviceReturning("hola").predict(request()))
+        PredictionService service = serviceReturning("hola");
+        PredictionRequest request = request();
+        assertThatThrownBy(() -> service.predict(request))
                 .isInstanceOf(AiUnavailableException.class);
     }
 }

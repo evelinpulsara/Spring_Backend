@@ -25,20 +25,24 @@ public class PredictionService
     static final int MIN_PERIOD = 2;
     static final int MAX_PERIOD = 10;
 
-    private static final List<String> CONFIDENCE_LEVELS = List.of("low", "medium", "high");
-    private static final Set<String> CONFIDENCE = Set.copyOf(CONFIDENCE_LEVELS);
     private static final String DEFAULT_CONFIDENCE = "medium";
+    private static final List<String> CONFIDENCE_LEVELS = List.of("low", DEFAULT_CONFIDENCE, "high");
+    private static final Set<String> CONFIDENCE = Set.copyOf(CONFIDENCE_LEVELS);
+
+    private static final String TYPE = "type";
+    private static final Map<String, Object> DATE_FIELD = Map.of(TYPE, "string", "description", "YYYY-MM-DD");
+    private static final Map<String, Object> TEXT_FIELD = Map.of(TYPE, "string");
 
     private static final Map<String, Object> RESPONSE_SCHEMA = Map.of(
-            "type", "object",
+            TYPE, "object",
             "properties", Map.of(
-                    "earliestStart", Map.of("type", "string", "description", "YYYY-MM-DD"),
-                    "likelyStart", Map.of("type", "string", "description", "YYYY-MM-DD"),
-                    "latestStart", Map.of("type", "string", "description", "YYYY-MM-DD"),
-                    "periodLength", Map.of("type", "integer"),
-                    "ovulationDate", Map.of("type", "string", "description", "YYYY-MM-DD"),
-                    "confidence", Map.of("type", "string", "enum", CONFIDENCE_LEVELS),
-                    "explanation", Map.of("type", "string")),
+                    "earliestStart", DATE_FIELD,
+                    "likelyStart", DATE_FIELD,
+                    "latestStart", DATE_FIELD,
+                    "periodLength", Map.of(TYPE, "integer"),
+                    "ovulationDate", DATE_FIELD,
+                    "confidence", Map.of(TYPE, "string", "enum", CONFIDENCE_LEVELS),
+                    "explanation", TEXT_FIELD),
             "required", List.of("earliestStart", "likelyStart", "latestStart", "periodLength",
                     "ovulationDate", "confidence", "explanation"));
 
